@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSA · Pitcher Status Analyzer</title>
+<meta name="description" content="Pitcher analysis from public game video: how each pitcher's delivery changes from one outing to the next. Open source, free data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/psa.css">
+</head>
+<body class="m-0 min-h-screen bg-[#0b1220] font-['Inter','Noto_Sans_TC',sans-serif] text-[#98a4b5] antialiased [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:32px_32px]">
+<div class="mx-auto max-w-5xl px-4 sm:px-6">
+
+  <nav class="flex items-center justify-between gap-4 py-5 text-sm">
+    <a href="./" class="font-semibold text-[#e4e9f0] no-underline">PSA <span class="font-normal text-[#7a8699]">· Pitcher Status Analyzer</span></a>
+    <div class="flex gap-6"><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="#reports">Reports</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="#how">How it works</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="#algorithm">Algorithm</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="method/">Method</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="cpbl2024g4_0000_6000/">Demo</a></div>
+  </nav>
+
+  <header class="grid items-center gap-12 py-14 md:grid-cols-[1fr_1.1fr] md:py-20">
+    <div>
+      <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#7a8699]">Open source · free data</p>
+      <h1 class="mb-0 mt-4 text-4xl font-semibold leading-tight tracking-tight text-[#e4e9f0] sm:text-5xl">Pitcher analysis from public game video</h1>
+      <p class="mb-0 mt-4 max-w-md text-lg">See how each pitcher's delivery changes from one outing to the next. No tracking hardware, no paid data.</p>
+      <div class="mt-8 flex flex-wrap items-center gap-6">
+        <a href="#reports" class="rounded-md bg-[#f2b84b] px-5 py-3 text-sm font-semibold text-[#0b1220] no-underline hover:bg-[#f6ca72]">See live reports</a>
+        <a href="#how" class="text-sm text-[#98a4b5] no-underline hover:text-[#e4e9f0]">How it works →</a>
+      </div>
+    </div>
+    <figure class="m-0 rounded-lg bg-[#121b2c] p-5"><figcaption class="text-sm"><span class="block text-[#e4e9f0]">胡智為 · PSI by outing, 2025–2026</span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">100 = pitching like his previous 3 outings</span></figcaption><svg viewBox="0 0 420 240" class="mt-3 block w-full" role="img" aria-label="PSI by outing; lowest 5/24, 58"><g stroke="#1f2a3d" stroke-width="1"><line x1="30" y1="20.0" x2="410" y2="20.0"></line><line x1="30" y1="110.0" x2="410" y2="110.0"></line><line x1="30" y1="200.0" x2="410" y2="200.0"></line></g><g font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8699"><text x="24" y="24.0" text-anchor="end">100</text><text x="24" y="114.0" text-anchor="end">50</text><text x="24" y="204.0" text-anchor="end">0</text></g><polyline points="40.0,59.6 60.0,47.0 80.0,34.4 100.0,50.6 120.0,34.4 140.0,32.6 160.0,38.0 180.0,32.6 200.0,43.4 220.0,61.4 240.0,29.0 260.0,20.0 280.0,23.6 300.0,95.6 320.0,54.2 340.0,23.6 360.0,32.6 380.0,23.6 400.0,32.6" fill="none" stroke="#6f9ee8" stroke-width="2"></polyline><g fill="#6f9ee8" stroke="#121b2c" stroke-width="2"><circle cx="40.0" cy="59.6" r="4.5"></circle><circle cx="60.0" cy="47.0" r="4.5"></circle><circle cx="80.0" cy="34.4" r="4.5"></circle><circle cx="100.0" cy="50.6" r="4.5"></circle><circle cx="120.0" cy="34.4" r="4.5"></circle><circle cx="140.0" cy="32.6" r="4.5"></circle><circle cx="160.0" cy="38.0" r="4.5"></circle><circle cx="180.0" cy="32.6" r="4.5"></circle><circle cx="200.0" cy="43.4" r="4.5"></circle><circle cx="220.0" cy="61.4" r="4.5"></circle><circle cx="240.0" cy="29.0" r="4.5"></circle><circle cx="260.0" cy="20.0" r="4.5"></circle><circle cx="280.0" cy="23.6" r="4.5"></circle><circle cx="320.0" cy="54.2" r="4.5"></circle><circle cx="340.0" cy="23.6" r="4.5"></circle><circle cx="360.0" cy="32.6" r="4.5"></circle><circle cx="380.0" cy="23.6" r="4.5"></circle><circle cx="400.0" cy="32.6" r="4.5"></circle></g><circle cx="300.0" cy="95.6" r="6" fill="#f2b84b" stroke="#121b2c" stroke-width="2"></circle><text x="289.0" y="113.6" text-anchor="end" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">5/24 · 58</text><g font-family="JetBrains Mono, monospace" font-size="10" fill="#7a8699" text-anchor="middle"><text x="40.0" y="222">4/9</text><text x="100.0" y="222">8/8</text><text x="160.0" y="222">9/9</text><text x="220.0" y="222">4/6</text><text x="280.0" y="222">5/12</text><text x="340.0" y="222">8/1</text><text x="400.0" y="222">8/23</text></g></svg></figure>
+  </header>
+
+  <section class="grid grid-cols-2 gap-6 border-0 border-t border-solid border-white/5 pt-8 md:grid-cols-4"><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">Free</b><span class="text-sm text-[#7a8699]">no hardware, no paid data</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">26</b><span class="text-sm text-[#7a8699]">outings scored, pro and high school</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">2,371</b><span class="text-sm text-[#7a8699]">pitches tracked</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">~5 min</b><span class="text-sm text-[#7a8699]">per highlight video on a Mac</span></div></section>
+
+  <section id="how" class="py-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">How it works</h2>
+    <ol class="mb-0 mt-5 grid list-none gap-3 p-0 sm:grid-cols-2 md:grid-cols-4">
+      <li class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">01</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Read the scorebug</h3><p class="mb-0 mt-1 text-sm">Batter, count, pitch count, speed.</p></li>
+      <li class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">02</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Match each pitch</h3><p class="mb-0 mt-1 text-sm">To open play-by-play data.</p></li>
+      <li class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">03</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Measure the release</h3><p class="mb-0 mt-1 text-sm">Body pose at the release frame.</p></li>
+      <li class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">04</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Score the outing</h3><p class="mb-0 mt-1 text-sm">PSI against his previous three (<a class="text-[#98a4b5]" href="#algorithm">algorithm</a>).</p></li>
+    </ol>
+    <a href="cpbl2024g4_0000_6000/" class="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-solid border-[#f2b84b]/40 bg-[#121b2c] p-5 no-underline hover:border-[#f2b84b]"><span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Demo · how the analysis works</span><span class="mt-1 block text-lg font-medium text-[#e4e9f0]">Follow one full game, step by step</span><span class="mt-1 block text-sm text-[#98a4b5]">2024 中華職棒二軍總冠軍賽 G4 味全龍二軍 vs 統一獅二軍: every pitch from the scorebug, the pitching shots, the release frames and the posture they give.</span></span><span class="text-sm font-medium text-[#f2b84b]">Open the demo →</span></a>
+  </section>
+
+  <section id="algorithm" class="pb-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">The algorithm</h2>
+    <p class="mb-0 mt-2 max-w-2xl text-sm">PSI (Pitcher Stability Index) asks one question per outing: is he pitching like his own previous three outings? 100 means yes. The full method (data, pipeline, baselines, validation, references) is on the <a class="text-[#e4e9f0]" href="method/">Method</a> page.</p>
+    <div class="mt-5 grid gap-3 md:grid-cols-3">
+      <div class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">1 · change</span>
+        <p class="mb-0 mt-3 font-['JetBrains_Mono',monospace] text-base text-[#e4e9f0]">d = |change| ÷ threshold</p>
+        <p class="mb-0 mt-2 text-sm">For each part, this outing against his previous 3. The threshold is the smallest change the measurement can detect at 95% (pitch-to-pitch scatter and the number of pitches).</p></div>
+      <div class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">2 · part score</span>
+        <p class="mb-0 mt-3 font-['JetBrains_Mono',monospace] text-base text-[#e4e9f0]">score = 100 · e<sup>−d²/4</sup></p>
+        <svg viewBox="0 0 400 190" class="mt-2 block w-full" role="img" aria-label="Part score against d: 78 at d = 1, 37 at d = 2">
+          <g stroke="#1f2a3d" stroke-width="1"><line x1="40" y1="16" x2="380" y2="16"></line><line x1="40" y1="91" x2="380" y2="91"></line><line x1="40" y1="166" x2="380" y2="166"></line></g>
+          <g font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8699"><text x="32" y="20" text-anchor="end">100</text><text x="32" y="95" text-anchor="end">50</text><text x="32" y="170" text-anchor="end">0</text>
+            <text x="40" y="184" text-anchor="middle">0</text><text x="150" y="184" text-anchor="middle">1</text><text x="260" y="184" text-anchor="middle">2</text><text x="370" y="184" text-anchor="middle">d = 3</text></g>
+          <polyline points="40.0,16.0 45.5,16.1 51.0,16.4 56.5,16.8 62.0,17.5 67.5,18.3 73.0,19.3 78.5,20.5 84.0,21.9 89.5,23.4 95.0,25.1 100.5,26.9 106.0,28.9 111.5,31.0 117.0,33.3 122.5,35.7 128.0,38.2 133.5,40.8 139.0,43.5 144.5,46.3 150.0,49.2 155.5,52.1 161.0,55.2 166.5,58.2 172.0,61.3 177.5,64.5 183.0,67.7 188.5,70.9 194.0,74.1 199.5,77.3 205.0,80.5 210.5,83.7 216.0,86.9 221.5,90.1 227.0,93.2 232.5,96.2 238.0,99.3 243.5,102.2 249.0,105.2 254.5,108.0 260.0,110.8 265.5,113.5 271.0,116.2 276.5,118.8 282.0,121.3 287.5,123.7 293.0,126.0 298.5,128.3 304.0,130.5 309.5,132.6 315.0,134.6 320.5,136.5 326.0,138.3 331.5,140.1 337.0,141.8 342.5,143.4 348.0,144.9 353.5,146.3 359.0,147.7 364.5,149.0 370.0,150.2" fill="none" stroke="#6f9ee8" stroke-width="2.5"></polyline>
+          <circle cx="150" cy="49.2" r="5" fill="#6f9ee8" stroke="#121b2c" stroke-width="2"></circle><text x="160" y="44" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">78 at the threshold</text>
+          <circle cx="260" cy="110.8" r="5" fill="#f2b84b" stroke="#121b2c" stroke-width="2"></circle><text x="270" y="106" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">37 at twice it</text>
+        </svg></div>
+      <div class="rounded-lg bg-[#121b2c] p-5"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">3 · PSI</span>
+        <p class="mb-0 mt-3 font-['JetBrains_Mono',monospace] text-base text-[#e4e9f0]">PSI = ½ results + ½ mechanics</p>
+        <p class="mb-0 mt-2 text-sm">Each half is the average of its parts. If a half cannot be measured for an outing, PSI is the other half.</p>
+        <div class="mt-4 grid gap-2 text-sm"><div class="flex justify-between gap-3"><span class="text-[#e4e9f0]">80+</span><span>steady, like his previous outings</span></div><div class="flex justify-between gap-3"><span class="text-[#e4e9f0]">60–79</span><span>worth a look</span></div><div class="flex justify-between gap-3"><span class="text-[#f2b84b]">below 60</span><span>flagged: something moved</span></div></div></div>
+    </div>
+    <div class="mt-3 overflow-x-auto rounded-lg bg-[#121b2c]">
+      <table class="w-full border-collapse text-left text-sm">
+        <thead class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]"><tr><th class="px-5 py-3 font-normal">Half</th><th class="px-5 py-3 font-normal">Part</th><th class="px-5 py-3 font-normal">What is measured</th><th class="px-5 py-3 font-normal">Counts</th></tr></thead>
+        <tbody>
+          <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]" rowspan="2">Results · 50%</td><td class="px-5 py-3 text-[#e4e9f0]">Velocity</td><td class="px-5 py-3">Fastball speed (mean km/h)</td><td class="px-5 py-3">drops only</td></tr>
+          <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Command</td><td class="px-5 py-3">Strike rate</td><td class="px-5 py-3">drops only</td></tr>
+          <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]" rowspan="3">Mechanics · 50%</td><td class="px-5 py-3 text-[#e4e9f0]">Posture</td><td class="px-5 py-3">Side and forward lean, shoulder and hip lines, arm slot, release point at the release frame</td><td class="px-5 py-3">either way</td></tr>
+          <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Timing</td><td class="px-5 py-3">Hip lead and shoulder opening before release (ms)</td><td class="px-5 py-3">either way</td></tr>
+          <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Consistency</td><td class="px-5 py-3">Spread of the release point</td><td class="px-5 py-3">wider only</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="reports" class="pb-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">Live reports</h2>
+    <div class="mt-5 grid gap-3 md:grid-cols-3"><a href="hu/" class="rounded-lg bg-[#121b2c] p-5 no-underline hover:bg-[#18233a]"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Season · CPBL</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">胡智為 · 2025–2026</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">16 starts and 4 relief outings, 310 pitches, hand-checked.</p></a><a href="pitchers/" class="rounded-lg bg-[#121b2c] p-5 no-underline hover:bg-[#18233a]"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Tournament · high school</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">2025 Black Panther Flag</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">4 pitchers across 5 games: pitch counts, velocity, posture.</p></a></div>
+  </section>
+
+  <section class="grid gap-8 border-0 border-t border-solid border-white/5 py-12 sm:grid-cols-2">
+    <div>
+      <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">What you need</h2>
+      <ul class="mb-0 mt-3 space-y-1 pl-5 text-sm"><li>A Mac (Apple Vision, included with macOS)</li><li>A link to the game video</li><li>Play-by-play data, when it exists</li></ul>
+    </div>
+    <div>
+      <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">Limits</h2>
+      <ul class="mb-0 mt-3 space-y-1 pl-5 text-sm"><li>Highlights show 10–25 pitches per start</li><li>The score flags change, not quality</li><li>Not a medical assessment</li></ul>
+    </div>
+  </section>
+
+  <footer class="border-0 border-t border-solid border-white/5 py-6 text-xs leading-relaxed text-[#7a8699]">Video: public broadcasts and highlights on YouTube, linked to the original; rights remain with their owners. Data: Rebas Open Data (ODC-By), CPBL play-by-play. Built for the 2026 Rebas Baseball Data Hackathon.</footer>
+</div>
+</body>
+</html>
