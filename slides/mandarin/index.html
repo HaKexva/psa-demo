@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>PSA · 投手狀態分析</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap">
+<style>
+  html, body { margin: 0; background: #0b1220; }
+  body { padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .frame { width: min(100%, 1280px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 8px;
+           box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+  .slide { width: 1920px; height: 1080px; transform-origin: top left; position: absolute; left: 0; top: 0; }
+  .slide > section { width: 1920px; height: 1080px; box-sizing: border-box; position: relative; }
+  section h1, section h2, section h3, section p, section ul, section ol { margin: 0; }
+  section aside { display: none; }
+  section table { border-collapse: collapse; }
+  section th, section td { text-align: left; padding: 16px 20px; border-bottom: 1px solid #24304a; vertical-align: top; }
+</style>
+</head>
+<body>
+<div class="frame"><div class="slide"><section id="cover" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<p style="font-size:28px;color:#f2b84b">PSA · 投手狀態分析</p>
+<div style="display:flex;flex-direction:column;gap:40px">
+<h1 style="font-size:96px;font-weight:600;line-height:1.08;color:#e4e9f0">由公開比賽影片中<br>分析投手狀態</h1>
+<p style="font-size:28px;line-height:1.4;color:#98a4b5;width:1200px">由每位投手的放球點姿勢來了解場間狀態變化。無須追蹤裝置，也不需付費資料。</p>
+</div>
+<div style="display:flex;gap:48px;align-items:center">
+<p style="font-size:24px;color:#98a4b5">2026 野革盃 · Rebas 黑客松</p>
+<p style="font-size:24px;color:#6f9ee8">hakexva.github.io/psa-demo</p>
+</div>
+<aside>PSA 為低預算的學校和球隊而生，將免費的轉播影片和開放的逐球資料轉化為每場出賽的評分，評估每位投手與其最近幾場比賽的表現。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="problem" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">問題</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0;width:1500px">要能仔細追蹤投手的狀態需要大多數球隊所沒有的硬體設備</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">職業球隊</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Statcast、Hawk-Eye 和 TrackMan 量測每一球的球速、轉速以及出手點。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">學校與業餘球隊</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">以人工計算投球數，無法投資追蹤系統或購買付費資料。</p>
+</div>
+<div style="background:#16213a;border:1px solid #f2b84b;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:28px;font-weight:600;color:#f2b84b">但固定一個角度錄影並不難</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">黑豹旗等賽事有固定中外野鏡頭的免費直播。之後在練習時，把手機架在投手丘後方拍 Live AB，就能得到同樣的視角。</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 02</p>
+<aside>職業隊用球場系統追蹤每一球，多數學校只能手記用球數。黑豹旗等比賽已經有固定角度的免費直播；之後的練習模式則把手機架在投手丘後方拍 Live AB，讓教練在比賽之間也能檢查投手狀態。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="idea" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">概念</p>
+<h2 style="font-size:96px;font-weight:700;line-height:1.08;color:#e4e9f0">放進一段轉播影片，<br>逐球分析</h2>
+</div>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5;width:1400px">投球數與球速來自轉播或開源的逐球資料、投手在出手時的身體機制來自中外野攝影機</p>
+<div style="display:flex;gap:40px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:12px"><img src="images/bp_broadcast_frame.jpg" alt="2025 黑豹旗冠軍戰中外野攝影機的畫面，出手瞬間並在角落顯示記分板" style="width:528px;height:297px;object-fit:cover;border-radius:12px"><p style="font-size:24px;color:#98a4b5">轉播畫面</p></div>
+<div style="display:flex;flex-direction:column;gap:12px"><img src="images/bp_scorebug.jpg" alt="記分板：隊伍、比分、局數、球數、投手、用球數和球速" style="width:594px;height:297px;object-fit:cover;border-radius:12px"><p style="font-size:24px;color:#98a4b5">記分板：球數、用球數、球速</p></div>
+<div style="display:flex;flex-direction:column;gap:12px"><img src="images/bp_release_pose.jpg" alt="在投球時，由放球點的畫面中可以看到投手的姿勢，標示出手臂位置和軀幹角度。" style="width:297px;height:297px;object-fit:cover;border-radius:12px"><p style="font-size:24px;color:#98a4b5">放球點的姿勢</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 03</p>
+<aside>核心概念：固定角度轉播已包含判讀投手狀態所需的資訊。藉由轉播中每球的資料，即可協助教練掌握投手狀況。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="pipeline" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">運作機制</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">每部影片在 Mac 上約需五分鐘時間處理分析五個步驟。</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:24px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">01</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">找出放球點</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">保留中外野鏡頭，省略重播與特寫鏡頭。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">02</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">閱讀記分板</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">球數、用球數、球速，藉由 macOS 文字辨識軟體讀取。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">03</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">追蹤投手放球點姿勢</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Apple Vision人體姿勢偵測，學習模型找出放球點的一瞬間。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">04</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">一球一球串接起來</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">當公開逐球資料時，根據資料進行比對；若無，則依據記分板的球數變化來判斷每一球的結果。</p>
+</div>
+<div style="background:#16213a;border:1px solid #f2b84b;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">05</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">對每一次出賽做評分</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">PSI：投手狀態指數</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 04</p>
+<aside>每個步驟都在 Mac 電腦上運作，使用內建的 Apple Vision框架。在示範頁面中將 2025 黑豹旗冠軍戰完整透過五個步驟分析。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="psi" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">分數</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">PSI 投手狀態指數：他投球有走樣嗎？</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;color:#e4e9f0;background:#0a101f;border:1px solid #24304a;border-radius:10px;padding:20px">d = 該次出賽（或該球）速球球速變化 ÷ 速球球速變化閥值</p>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">速球球速變化閥值：在95%的信心水準下，能夠察覺到的最小變化。d=1代表變化已達觀測值以上</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;color:#e4e9f0;background:#0a101f;border:1px solid #24304a;border-radius:10px;padding:20px">投球結果 = 100 · e^(−d²/4)</p>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">沒有變化是 100，剛好到閥值是 78，兩倍閥值是 37。即 Harrington 雙側合意函數（1965），n = 2。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;color:#e4e9f0;background:#0a101f;border:1px solid #24304a;border-radius:10px;padding:20px">PSI (投手狀態指數) = ½ 投球結果 + ½ 機制</p>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">投球結果：球速、控球。機制：姿勢、時序、出手一致性。</p>
+</div>
+</div>
+<div style="display:flex;gap:40px;align-items:center">
+<p style="font-size:24px;color:#9dbcf0;background:#16264a;border:1px solid #2e4878;border-radius:999px;padding:8px 24px">80+ 穩定持續</p>
+<p style="font-size:24px;color:#c3ccd8;background:#1a2438;border:1px solid #33405a;border-radius:999px;padding:8px 24px">60–79 值得留意</p>
+<p style="font-size:24px;color:#f2b84b;background:#2a2414;border:1px solid #6b5420;border-radius:999px;padding:8px 24px">60 以下 標記投手狀況改變</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 05</p>
+<aside>除以偵測閾值後，km/h、度和毫秒就被放在同一個標準上了。這條鐘形曲線在接近零的地方很平坦，所以雜訊幾乎不會造成什麼誤差，而且在閾值處也沒有陡降現象。這個公式使用了哈靈頓合意度函數（Harrington Desirability Function）作為0與1之間顯著變化的依據。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="example" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">一場比賽的出賽成績</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">李鎮宸，2025 黑豹旗四強：連續第二天登板</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">PSI · 和他之前的比賽相比</h3><p style="font-size:28px;color:#c3ccd8">74</p></div>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">球速 −1.0 km/h → 88</p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">控球 好球率少 19 個百分點 → 82</p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">投球出手點擴散度 ×1.46 → 64</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">在比賽中 · 後半段與前半段</h3><p style="font-size:28px;color:#c3ccd8">74</p></div>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">時序：轉髖與開肩的時機改變 → <span style="color:#f2b84b">32</span></p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">球速 −2.3 km/h → 80</p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">控球 → 96 · 姿勢 → 87</p>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#16213a;border:1px solid #f2b84b;border-radius:16px;padding:28px 36px">
+<p style="font-size:28px;line-height:1.45;color:#e4e9f0">前一天投 23 球，當天投 46 球：雖符合休息規定，但兩個分數都顯示值得觀察。教練這個時候就可利用轉播來生成PSI分析報告。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 06</p>
+<aside>這是黑豹旗盃賽報告裡真實的一場。盃賽分數和他之前的比賽比較；場內分數比較他的後半段和前半段。連續第二天登板時兩者都有變化，而用球數仍在規定之內。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="twoscores" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">根據不同情況，分析投手是否穩定</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">在一場比賽之內，以及不同比賽之間</h2>
+</div>
+<table style="font-size:28px;color:#c3ccd8;width:1664px">
+<tr><th style="width:22%;color:#7a8699">&#160;</th><th style="width:39%;color:#e4e9f0">單場分數</th><th style="width:39%;color:#e4e9f0">PSI（比賽與比賽之間）</th></tr>
+<tr><td style="color:#98a4b5">比較</td><td>後半段和前半段</td><td>這場出賽與前三場</td></tr>
+<tr><td style="color:#98a4b5">閥值</td><td>只計抽樣誤差</td><td>抽樣加上正常的比賽間變化</td></tr>
+<tr><td style="color:#98a4b5">虛無檢定</td><td>同一場比賽的隨機兩半</td><td>將一季賽事的出場時序打亂</td></tr>
+<tr><td style="color:#98a4b5">聯盟檢查</td><td>隨機兩半中，0% 被標記；21% 的先發在後半段球速下降。</td><td>不計算場間差異時，56% 的出賽達到「95%」閥值</td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:900px;font-size:24px;color:#7a8699">PSA · 07 · Rebas 開放資料 2023-2025，所有中職出賽</p>
+<aside>同一場比賽內沒有當日的差異，因此僅計算抽樣誤差的閥值是適當的，場內分數也會容易被校準。然而，跨越多場比賽時，閥值必須涵蓋正常的差異；聯盟測試亦顯示如此，這也是下一個需要修正的重點。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="camera" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">每座棒球場都有其獨特性</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">球場本身就是尺度的標準</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;line-height:1.5;color:#98a4b5">每座球場的中外野鏡頭角度各有不同，因此一座球場的 5° 傾斜在另一座球場並不等同於 5°。</p>
+<p style="font-size:28px;line-height:1.5;color:#98a4b5">在一格畫面上標出 13 個關鍵點（打擊區、本壘板、投手板），置於其官方距離，能夠計算出攝影機的方向與焦距。</p>
+<p style="font-size:28px;line-height:1.5;color:#e4e9f0">同一轉播的不同片段，皆會相差在 0.1–0.5° 內。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px">
+<svg aria-label="從中外野觀察到的場地地標：遠處上方是投手板，下方靠近本壘板和兩側打擊區，標示出 13 個標記點。" width="720" height="480" viewBox="0 40 720 480">
+<rect x="0" y="40" width="720" height="480" fill="#16213a"/>
+<ellipse cx="360" cy="110" rx="120" ry="34" fill="#3a2f22"/>
+<rect x="330" y="104" width="60" height="8" fill="#e4e9f0"/>
+<circle cx="330" cy="108" r="9" fill="#f2b84b"/>
+<circle cx="390" cy="108" r="9" fill="#f2b84b"/>
+<polygon points="150,330 300,330 290,470 120,470" fill="none" stroke="#e4e9f0" stroke-width="4"/>
+<polygon points="420,330 570,330 600,470 430,470" fill="none" stroke="#e4e9f0" stroke-width="4"/>
+<polygon points="330,380 390,380 395,400 360,420 325,400" fill="#e4e9f0"/>
+<circle cx="150" cy="330" r="9" fill="#f2b84b"/><circle cx="300" cy="330" r="9" fill="#f2b84b"/>
+<circle cx="120" cy="470" r="9" fill="#f2b84b"/><circle cx="290" cy="470" r="9" fill="#f2b84b"/>
+<circle cx="420" cy="330" r="9" fill="#f2b84b"/><circle cx="570" cy="330" r="9" fill="#f2b84b"/>
+<circle cx="430" cy="470" r="9" fill="#f2b84b"/><circle cx="600" cy="470" r="9" fill="#f2b84b"/>
+<circle cx="330" cy="380" r="9" fill="#6f9ee8"/><circle cx="390" cy="380" r="9" fill="#6f9ee8"/><circle cx="360" cy="420" r="9" fill="#6f9ee8"/>
+<line x1="360" y1="140" x2="360" y2="360" stroke="#2a3754" stroke-width="3" stroke-dasharray="10 10"/>
+</svg>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 08</p>
+<aside>規則會決定球場的尺寸，因此只需在一幀畫面上標示幾個點，便能解出攝影機。當攝影機位置已知後，不論在哪座球場，都能以假設投手正後方的角度來測量身體角度。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="camera_real" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px"><div style="display:flex;flex-direction:column;gap:20px"><p style="font-size:24px;color:#f2b84b">真實畫面</p><h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">點 13 下，就能解出攝影機</h2></div><div style="display:grid;grid-template-columns:900px 1fr;gap:64px;align-items:start"><img src="images/landmarks_real.jpg" alt="中外野鏡頭的中職轉播畫面：投手在投手丘上，後方是打者、捕手和主審；黃點標在兩側打擊區、本壘板和投手板的角上，藍線是透過解出的攝影機畫出的打擊區、本壘板和投手板" style="width:900px;height:600px;object-fit:cover;border-radius:16px"><div style="display:flex;flex-direction:column;gap:28px"><p style="font-size:28px;line-height:1.5;color:#98a4b5"><span style="color:#f2b84b">黃點：</span> 在一格畫面上手動點出的 13 個點。</p><p style="font-size:28px;line-height:1.5;color:#98a4b5"><span style="color:#6f9ee8">藍線：</span> 依官方尺寸的打擊區、本壘板和投手板，透過解出的攝影機畫回畫面上。</p><p style="font-size:28px;line-height:1.5;color:#e4e9f0">和手動點位平均只差 4.5 像素。已標記的 40 部影片全部都能解出。</p><p style="font-size:24px;color:#7a8699">中職轉播，2025-06-24</p></div></div><p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 09</p><aside>同樣的概念放在真實的轉播畫面上：每部影片花一分鐘點選，就能定出攝影機；再用它把官方尺寸的場地畫回去，正好落在點選的位置上。</aside></section>
+</div></div>
+<div class="frame"><div class="slide"><section id="reports" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">Demo展示：hakexva.github.io/psa-demo</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">高中與職業層級分析報告展示:</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:24px;color:#7a8699">盃賽 · 高中</p>
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">2025 黑豹旗</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">用球數會依照休息規定進行檢查，每場比賽都有 PSI 和場內分數。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:24px;color:#7a8699">賽季 · 中職</p>
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">胡智為 · 2025-2026</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">每場出賽都與前三場相比，PSI 與比賽分數並列比較。</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:24px;color:#7a8699">範例</p>
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">一場比賽，逐球資料</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">2025 黑豹旗冠軍戰，羅東高工 vs 平鎮高中：每一球都經過五個步驟驗證。</p>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">免費</p><p style="font-size:24px;color:#98a4b5">不需硬體設備，不需付費資料</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">33</p><p style="font-size:24px;color:#98a4b5">已評分的出賽</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">3,164</p><p style="font-size:24px;color:#98a4b5">已追蹤的投球</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">大約五分鐘</p><p style="font-size:24px;color:#98a4b5">每部精華影片</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:900px;font-size:24px;color:#7a8699">PSA · 10 · hakexva.github.io/psa-demo</p>
+<aside>三份報告已實際放置於示範網站上，數據來源為首頁。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="holds" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">數據目前能支持的論點</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">量測值呈現一致性</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #f2b84b;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">114 / 114</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">自動判定的出手點全部落在人工標記 ±1 影格內，而且是在從未看過的黑豹旗攝影機上</p></div>
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #f2b84b;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">1.4°</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">同一球在兩個中職轉播剪輯中，投手側傾差異的中位數</p></div>
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #6f9ee8;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">0.1–0.5°</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">同一中職訊號來源不同剪輯之鏡頭方向的一致性</p></div>
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #6f9ee8;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">0.2%</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">43 場黑豹旗出賽中，隨機兩半被標記的比例：雜訊不會被當成變化</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 11</p>
+<aside>這些檢查都通過了：在高中影片上，出手點判定只要有給答案就和人工標記一致；單場分數也不會把同一場比賽內的雜訊當成變化。兩項角度檢查來自中職轉播。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="open" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">目前數據還無法呈現出來的</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">PSI 能察覺變化，但目前仍無法進行預測。</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<div style="display:grid;grid-template-columns:420px 1fr;gap:40px;border-top:1px solid #24304a;padding:28px 0"><p style="font-size:28px;font-weight:600;color:#e4e9f0">閥值設定過於嚴苛</p><p style="font-size:28px;line-height:1.45;color:#98a4b5">2025 黑豹旗 10 場全場比賽：投手的速球在兩場之間變化 1.8 km/h（標準差），而不是只計抽樣時預估的 0.9；42% 的變化超過「95%」閥值（中職 2023–2025：56%）。</p></div>
+<div style="display:grid;grid-template-columns:420px 1fr;gap:40px;border-top:1px solid #24304a;padding:28px 0"><p style="font-size:28px;font-weight:600;color:#e4e9f0">還沒有結果可以驗證</p><p style="font-size:28px;line-height:1.45;color:#98a4b5">高中比賽沒有公開的逐球資料，標記有沒有意義只能由教練判斷。在中職，投球結果分數偏低並不能預測下一場先發（ρ = −0.02）。</p></div>
+<div style="display:grid;grid-template-columns:420px 1fr;gap:40px;border-top:1px solid #24304a;border-bottom:1px solid #24304a;padding:28px 0"><p style="font-size:28px;font-weight:600;color:#e4e9f0">一個盃賽，8 位投手</p><p style="font-size:28px;line-height:1.45;color:#98a4b5">蔡辰瀧（平鎮）四場下來速球少了 5.6 km/h（146 → 140 km/h），四強前還休息了 9 天：這是給教練的線索，不是結論。</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 12</p>
+<aside>高中比賽和中職一樣，閥值沒有考慮正常的場間差異，這是第一個要修正的地方。學校比賽沒有公開的逐球資料，結果驗證要靠教練。</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="next" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, 'Noto Sans TC', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">下一步</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">從一致的量測到有用的訊號，接著還能做什麼？</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">1 · 擴大閥值</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">把在黑豹旗和中職量到的場間差異納入每個項目的閥值，再重跑兩個測試。</p></div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">2 · 練習模式</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">Live AB 時把手機架在投手丘後方，讓教練和投手在比賽之間也能檢查狀態。</p></div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">3 · 更多盃賽</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">2025 玉山盃（同樣是羅東、平鎮、美和的投手）和 2026 黑豹旗（10/25–11/29）的全場比賽。</p></div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">4 · 教練檢視</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">先從黑豹旗的球隊開始，請教練檢視 PSI 標記的出賽，告訴我們哪些標記重要。</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 13</p>
+<aside>接下來，每個閥值都會納入量到的場間差異；再加入更多高中全場比賽、Live AB 的練習模式，以及教練對標記的檢視。</aside>
+</section>
+</div></div>
+<script>
+  const fit = () => document.querySelectorAll(".frame").forEach(f => f.firstElementChild.style.transform = `scale(${f.clientWidth / 1920})`);
+  addEventListener("resize", fit); fit();
+</script>
+</body>
+</html>

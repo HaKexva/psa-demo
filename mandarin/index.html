@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSA · 投手狀態分析</title>
+<meta name="description" content="用比賽影片追蹤你的投手：從一台固定角度的攝影機讀出用球數、球速和出手瞬間的身體姿勢。免費、開放原始碼，為學校球隊而做。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PSA · 投手狀態分析">
+<meta property="og:description" content="用比賽影片追蹤你的投手：從一台固定角度的攝影機讀出用球數、球速和出手瞬間的身體姿勢。免費、開放原始碼，為學校球隊而做。">
+<meta property="og:image" content="https://hakexva.github.io/psa-demo/assets/og.jpg">
+<meta property="og:url" content="https://hakexva.github.io/psa-demo/mandarin/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/psa.css">
+</head>
+<body class="m-0 min-h-screen bg-[#0b1220] font-['Inter','Noto_Sans_TC',sans-serif] text-[#98a4b5] antialiased [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:32px_32px]">
+<div class="mx-auto max-w-5xl px-4 sm:px-6">
+
+  <nav class="flex items-center justify-between gap-4 py-5 text-sm">
+    <a href="./" class="font-semibold text-[#e4e9f0] no-underline">PSA <span class="hidden font-normal text-[#7a8699] sm:inline">· 投手狀態分析</span></a>
+    <div class="flex gap-4 sm:gap-6"><a class="hidden text-[#98a4b5] no-underline hover:text-[#e4e9f0] sm:inline" href="#reports">報告</a><a class="hidden text-[#98a4b5] no-underline hover:text-[#e4e9f0] sm:inline" href="#how">運作機制</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="#algorithm">演算法</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="../method/">方法</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="../final_1930_6000/">範例</a><a lang="en" class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="../">English</a></div>
+  </nav>
+
+  <header class="grid items-center gap-12 py-14 md:grid-cols-[1fr_1.1fr] md:py-20">
+    <div class="min-w-0">
+      <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#7a8699]">開放原始碼 · 免費資料 · 為學校球隊而做</p>
+      <h1 class="mb-0 mt-4 text-4xl font-semibold leading-tight tracking-tight text-[#e4e9f0] sm:text-5xl">用比賽影片追蹤你的投手</h1>
+      <p class="mb-0 mt-4 max-w-md text-lg">職業隊用球場系統量測每一球，多數學校只能手記用球數。PSA 從一台固定角度的攝影機讀出用球數、球速和投手出手瞬間的身體姿勢，並在投手投得不像自己時提出標記。</p>
+      <div class="mt-8 flex flex-wrap items-center gap-6">
+        <a href="#reports" class="rounded-md bg-[#f2b84b] px-5 py-3 text-sm font-semibold text-[#0b1220] no-underline hover:bg-[#f6ca72]">看線上報告</a>
+        <a href="#how" class="text-sm text-[#98a4b5] no-underline hover:text-[#e4e9f0]">運作機制 →</a>
+      </div>
+    </div>
+    <figure class="m-0 min-w-0 rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><figcaption class="text-sm"><span class="block text-[#e4e9f0]">羅東高工 · 2025 黑豹旗，逐場</span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">用球數 · 單場分數（100 = 後半段和前半段一樣）</span></figcaption><div class="mt-4 overflow-x-auto"><table class="w-full border-collapse font-['JetBrains_Mono',monospace] text-[11px] text-[#7a8699]"><thead><tr><th></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/10</span><span class="block">64強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/21</span><span class="block">16強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/28</span><span class="block">八強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/29</span><span class="block">四強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/30</span><span class="block">冠軍戰</span></th></tr></thead><tbody><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">郭靖源</th><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">56</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">88</span></div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">36</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">80</span></div></td><td class="p-1"><div class="rounded-lg border border-dashed border-white/15 px-1 py-2 text-center text-[11px] leading-4 text-[#7a8699]">休息<br>規定</div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">33</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">76</span></div></td></tr><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">李鎮宸</th><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">39</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">78</span></div></td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">23</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center ring-2 ring-[#f2b84b]/60"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">46</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">74</span></div></td><td class="p-1"><div class="rounded-lg border border-dashed border-white/15 px-1 py-2 text-center text-[11px] leading-4 text-[#7a8699]">休息<br>規定</div></td></tr><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">林頡廷</th><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">44</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">83</span></div></td><td class="p-1"><div class="rounded-lg border border-dashed border-white/15 px-1 py-2 text-center text-[11px] leading-4 text-[#7a8699]">休息<br>規定</div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">51</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">95</span></div></td></tr><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">劉澔橙</th><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">12</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">96</span></div></td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">20</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">83</span></div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">15</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">82</span></div></td></tr></tbody></table></div><p class="mb-0 mt-3 text-xs leading-5 text-[#98a4b5]"><span class="text-[#f2b84b]">●</span> 李鎮宸，11/29：單場分數 74，從前半段到後半段變化最大的是時序。</p></figure>
+  </header>
+
+  <section class="grid grid-cols-2 gap-6 border-0 border-t border-solid border-white/5 pt-8 md:grid-cols-4"><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">免費</b><span class="text-sm text-[#7a8699]">不需硬體設備，不需付費資料</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">33</b><span class="text-sm text-[#7a8699]">已評分的出賽，職業與高中</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">3,164</b><span class="text-sm text-[#7a8699]">已追蹤的投球</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">約 5 分鐘</b><span class="text-sm text-[#7a8699]">每部精華影片（Mac）</span></div></section>
+
+  <section id="how" class="py-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">運作機制</h2>
+    <ol class="mb-0 mt-5 grid list-none gap-3 p-0 sm:grid-cols-2 md:grid-cols-4">
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">01</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">讀取記分板</h3><p class="mb-0 mt-1 text-sm">打者、球數、用球數、球速。</p></li>
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">02</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">逐球比對</h3><p class="mb-0 mt-1 text-sm">對上公開的逐球資料。</p></li>
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">03</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">量測出手瞬間</h3><p class="mb-0 mt-1 text-sm">出手畫面中的身體姿勢，並校正攝影機角度 (<a class="text-[#98a4b5]" href="../method/camera/">3D 圖解</a>).</p></li>
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">04</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">對每一次出賽做評分</h3><p class="mb-0 mt-1 text-sm">PSI：與他前三場出賽比較 (<a class="text-[#98a4b5]" href="#algorithm">演算法</a>).</p></li>
+    </ol>
+    <a href="../final_1930_6000/" class="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-solid border-[#f2b84b]/40 bg-[#0f1828] p-5 no-underline hover:border-[#f2b84b]"><span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">範例 · 分析如何運作</span><span class="mt-1 block text-lg font-medium text-[#e4e9f0]">跟著一場完整比賽，一步一步看</span><span class="mt-1 block text-sm text-[#98a4b5]">2025 第十三屆中信盃黑豹旗 冠軍戰 羅東高工 vs 平鎮高中：從記分板讀出的每一球、投球鏡頭、出手畫面，以及由此量出的姿勢。</span></span><span class="text-sm font-medium text-[#f2b84b]">打開範例 →</span></a>
+  </section>
+
+  <section id="algorithm" class="pb-20">
+    <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">演算法</p>
+    <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">每場出賽一個分數：他投得像自己嗎？</h2>
+    <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">PSI（投手狀態指數）把每場出賽和他自己的前三場比較。100 代表沒有任何變化。完整方法（資料、流程、基準、驗證、參考文獻）請見 <a class="text-[#e4e9f0] underline decoration-white/30 underline-offset-4 hover:decoration-[#f2b84b]" href="../method/">方法</a> 頁面。</p>
+    <div class="mt-8 grid gap-4 md:grid-cols-3">
+      <div class="flex flex-col rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <div class="flex items-center gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/[.06] font-['JetBrains_Mono',monospace] text-xs text-[#e4e9f0] ring-1 ring-white/15">1</span><h3 class="m-0 text-base font-medium text-[#e4e9f0]">量測變化</h3></div>
+        <p class="mb-0 mt-4 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-[15px] text-[#e4e9f0] ring-1 ring-inset ring-white/10">d = |變化| ÷ 閥值</p>
+        <p class="mb-0 mt-4 text-sm leading-6">每個項目都拿這場出賽和他的前三場比較。閥值是在 95% 信心水準下，量測能察覺的最小變化，由逐球的離散程度和球數決定。</p>
+        <p class="mb-0 mt-3 text-sm leading-6">所以 d 是以「可察覺的單位」來計算變化： <span class="text-[#e4e9f0]">d = 1</span> 代表變化剛好大到可以視為真實，不論項目的單位是 km/h、度還是毫秒。</p>
+        <div class="mt-auto border-0 border-t border-solid border-white/5 pt-4"><button type="button" class="group flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0] aria-expanded:text-[#e4e9f0]" aria-expanded="false" aria-controls="ex-1" data-ex="1"><svg viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>範例</button></div>
+      </div>
+      <div class="flex flex-col rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <div class="flex items-center gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/[.06] font-['JetBrains_Mono',monospace] text-xs text-[#e4e9f0] ring-1 ring-white/15">2</span><h3 class="m-0 text-base font-medium text-[#e4e9f0]">替每個項目評分</h3></div>
+        <p class="mb-0 mt-4 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-[15px] text-[#e4e9f0] ring-1 ring-inset ring-white/10">分數 = 100 · e<sup>−d²/4</sup></p>
+        <p class="mb-0 mt-4 text-sm leading-6"><span class="text-[#e4e9f0]">e ≈ 2.718</span>，自然成長與衰減的底數。這是一條鐘形曲線，也就是常態分布的形狀。</p>
+        <svg viewBox="0 0 400 190" class="mt-4 block w-full" role="img" aria-label="項目分數與 d 的關係：d = 1 時 78，d = 2 時 37">
+          <g stroke="#1f2a3d" stroke-width="1"><line x1="40" y1="16" x2="380" y2="16"></line><line x1="40" y1="91" x2="380" y2="91"></line><line x1="40" y1="166" x2="380" y2="166"></line></g>
+          <g font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8699"><text x="32" y="20" text-anchor="end">100</text><text x="32" y="95" text-anchor="end">50</text><text x="32" y="170" text-anchor="end">0</text>
+            <text x="40" y="184" text-anchor="middle">0</text><text x="150" y="184" text-anchor="middle">1</text><text x="260" y="184" text-anchor="middle">2</text><text x="370" y="184" text-anchor="middle">d = 3</text></g>
+          <polyline points="40.0,16.0 45.5,16.1 51.0,16.4 56.5,16.8 62.0,17.5 67.5,18.3 73.0,19.3 78.5,20.5 84.0,21.9 89.5,23.4 95.0,25.1 100.5,26.9 106.0,28.9 111.5,31.0 117.0,33.3 122.5,35.7 128.0,38.2 133.5,40.8 139.0,43.5 144.5,46.3 150.0,49.2 155.5,52.1 161.0,55.2 166.5,58.2 172.0,61.3 177.5,64.5 183.0,67.7 188.5,70.9 194.0,74.1 199.5,77.3 205.0,80.5 210.5,83.7 216.0,86.9 221.5,90.1 227.0,93.2 232.5,96.2 238.0,99.3 243.5,102.2 249.0,105.2 254.5,108.0 260.0,110.8 265.5,113.5 271.0,116.2 276.5,118.8 282.0,121.3 287.5,123.7 293.0,126.0 298.5,128.3 304.0,130.5 309.5,132.6 315.0,134.6 320.5,136.5 326.0,138.3 331.5,140.1 337.0,141.8 342.5,143.4 348.0,144.9 353.5,146.3 359.0,147.7 364.5,149.0 370.0,150.2" fill="none" stroke="#6f9ee8" stroke-width="2.5"></polyline>
+          <circle cx="150" cy="49.2" r="5" fill="#6f9ee8" stroke="#0b1220" stroke-width="2"></circle><text x="160" y="44" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">剛好到閥值：78</text>
+          <circle cx="260" cy="110.8" r="5" fill="#f2b84b" stroke="#0b1220" stroke-width="2"></circle><text x="270" y="106" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">兩倍閥值：37</text>
+        </svg>
+        <div class="mt-auto border-0 border-t border-solid border-white/5 pt-4"><button type="button" class="group flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0] aria-expanded:text-[#e4e9f0]" aria-expanded="false" aria-controls="ex-2" data-ex="2"><svg viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>範例</button></div>
+      </div>
+      <div class="flex flex-col rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <div class="flex items-center gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/[.06] font-['JetBrains_Mono',monospace] text-xs text-[#e4e9f0] ring-1 ring-white/15">3</span><h3 class="m-0 text-base font-medium text-[#e4e9f0]">合併成 PSI</h3></div>
+        <p class="mb-0 mt-4 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-[15px] text-[#e4e9f0] ring-1 ring-inset ring-white/10">PSI = ½ 投球結果<br><span class="invisible">PSI </span>+ ½ 機制</p>
+        <p class="mb-0 mt-4 text-sm leading-6">每一半是其項目的平均。若某場出賽有一半無法量測，PSI 就取另一半。</p>
+        <div class="mt-4 grid gap-2.5 text-sm">
+          <div class="flex items-center justify-between gap-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">80+</span><span>穩定持續，和他之前的出賽一樣</span></div>
+          <div class="flex items-center justify-between gap-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">60–79</span><span>值得留意</span></div>
+          <div class="flex items-center justify-between gap-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">60 以下</span><span>標記：有東西變了</span></div>
+        </div>
+        <div class="mt-auto border-0 border-t border-solid border-white/5 pt-4"><button type="button" class="group flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0] aria-expanded:text-[#e4e9f0]" aria-expanded="false" aria-controls="ex-3" data-ex="3"><svg viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>範例</button></div>
+      </div>
+    </div>
+    <div id="examples" class="mt-4 rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10" hidden>
+      <div id="ex-1" class="ex-panel" hidden>
+        <div class="flex items-center justify-between gap-3"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">範例 · 1 · 量測變化</span><button type="button" class="cursor-pointer border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0]" data-close>關閉 ×</button></div>
+        <div class="mt-1 max-w-2xl">
+          <p class="mb-0 mt-3 text-sm leading-6">胡智為，2025-09-26：他的速球平均比前三場慢 0.7 km/h。這場有 47 顆速球，能察覺的最小變化約 0.53 km/h。</p>
+          <p class="mb-0 mt-3 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0] ring-1 ring-inset ring-white/10">d = 0.7 ÷ 0.53 = 1.31</p>
+          <p class="mb-0 mt-3 text-sm leading-6">變化是雜訊可能造成的 1.31 倍。第 2 步把它換算成分數。</p>
+        </div>
+      </div>
+      <div id="ex-2" class="ex-panel" hidden>
+        <div class="flex items-center justify-between gap-3"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">範例 · 2 · 替每個項目評分</span><button type="button" class="cursor-pointer border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0]" data-close>關閉 ×</button></div>
+        <div class="mt-1 max-w-2xl">
+          <p class="mb-0 mt-3 text-sm leading-6">胡智為的速球，每場都和前三場比較（只計球速下降）。速球越多閥值越小，所以 47 球的 0.7 km/h（9/26）比 6 球的 1.1 km/h（5/24）更有份量。</p>
+          <div class="mt-3 overflow-x-auto"><table class="w-full border-collapse text-left text-xs [font-variant-numeric:tabular-nums]">
+            <thead class="font-['JetBrains_Mono',monospace] text-[#7a8699]"><tr><th class="py-2 pr-2 font-normal">出賽</th><th class="py-2 pr-2 font-normal">下降</th><th class="py-2 pr-2 font-normal">速球</th><th class="py-2 pr-2 font-normal">閥值</th><th class="py-2 pr-2 font-normal">d</th><th class="py-2 text-right font-normal">分數</th></tr></thead>
+            <tbody>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">9/26 '25</td><td class="py-2 pr-2">0.7</td><td class="py-2 pr-2">47</td><td class="py-2 pr-2">≈0.5</td><td class="py-2 pr-2 text-[#e4e9f0]">1.31</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">65</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">4/06 '26</td><td class="py-2 pr-2">2.6</td><td class="py-2 pr-2">6</td><td class="py-2 pr-2">≈1.3</td><td class="py-2 pr-2 text-[#e4e9f0]">1.99</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">37</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">5/12 '26</td><td class="py-2 pr-2">0.4</td><td class="py-2 pr-2">10</td><td class="py-2 pr-2">≈1.1</td><td class="py-2 pr-2 text-[#e4e9f0]">0.35</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">97</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">5/24 '26</td><td class="py-2 pr-2">1.1</td><td class="py-2 pr-2">6</td><td class="py-2 pr-2">≈1.1</td><td class="py-2 pr-2 text-[#e4e9f0]">1.00</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">78</span></td></tr>
+            </tbody></table></div>
+          <p class="mb-0 mt-2 text-xs text-[#7a8699]">下降與閥值單位為 km/h · 速球 = 速球數</p>
+        </div>
+      </div>
+      <div id="ex-3" class="ex-panel" hidden>
+        <div class="flex items-center justify-between gap-3"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">範例 · 3 · 合併成 PSI</span><button type="button" class="cursor-pointer border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0]" data-close>關閉 ×</button></div>
+        <div class="mt-1 max-w-2xl">
+          <p class="mb-0 mt-3 text-sm leading-6">胡智為，2025-08-08，從後援回到先發的第一場。</p>
+          <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+<div class="rounded-xl bg-[#0a101f] p-4 ring-1 ring-inset ring-white/10"><div class="flex items-center justify-between gap-3"><span class="text-[#e4e9f0]">投球結果 <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></span></div><div class="mt-3 grid gap-2">
+<div class="flex items-center justify-between gap-3"><span>球速 <span class="text-[#7a8699]">+3.5 km/h，上升</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div>
+<div class="flex items-center justify-between gap-3"><span>控球 <span class="text-[#7a8699]">好球率 +5.5%</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div>
+</div><div class="mt-3 flex items-center justify-between gap-3 border-0 border-t border-solid border-white/10 pt-3"><span class="text-[#e4e9f0]">平均 <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">(100 + 100) ÷ 2</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div></div>
+<div class="rounded-xl bg-[#0a101f] p-4 ring-1 ring-inset ring-white/10"><div class="flex items-center justify-between gap-3"><span class="text-[#e4e9f0]">機制 <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></span></div><div class="mt-3 grid gap-2">
+<div class="flex items-center justify-between gap-3"><span>姿勢 <span class="text-[#7a8699]">側傾 +4.8°</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">55</span></div>
+<div class="flex items-center justify-between gap-3"><span>時序 <span class="text-[#7a8699]">開肩 +22 ms</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">59</span></div>
+<div class="flex items-center justify-between gap-3"><span>一致性 <span class="text-[#7a8699]">擴散度 ×1.9</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">82</span></div>
+</div><div class="mt-3 flex items-center justify-between gap-3 border-0 border-t border-solid border-white/10 pt-3"><span class="text-[#e4e9f0]">平均 <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">(55 + 59 + 82) ÷ 3</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">65</span></div></div>
+</div>
+<div class="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-[#e4e9f0]">PSI = ½ · 100 + ½ · 65</span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">83</span></div>
+          <p class="mb-0 mt-3 text-sm leading-6">整體穩定，但有兩個項目低於 60：他的投球動作變了，結果卻維持住（0 責失分）。平均值會藏住單一項目的變化，所以也要看各項目。</p>
+        </div>
+      </div>
+    </div>
+    <div class="mt-12 border-0 border-t border-solid border-white/5 pt-8">
+      <h3 class="m-0 text-sm font-medium text-[#e4e9f0]">為什麼用這條曲線</h3>
+      <div class="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">01</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">同一把尺</h3><p class="mb-0 mt-1 text-sm">除以閥值後單位就消失了，球速、角度和時序才能一起平均。</p></div>
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">02</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">零附近很平</h3><p class="mb-0 mt-1 text-sm">雜訊範圍內的變化幾乎不扣分：半個閥值仍有 94 分。</p></div>
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">03</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">沒有懸崖</h3><p class="mb-0 mt-1 text-sm">及格/不及格的規則會把 d = 0.99 和 1.01 判成相反結果。這條曲線平滑下降，變化越大降得越快。</p></div>
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">04</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">分母 4 決定了分級</h3><p class="mb-0 mt-1 text-sm">剛好到閥值時項目分數是 78，差一點到穩定。低於 60 需要 d ≥ 1.43，單靠雜訊大約只有 0.5% 的機率達到。</p></div>
+      </div>
+      <p class="mb-0 mt-6 max-w-3xl text-xs leading-5 text-[#7a8699]">e 本身是固定常數，不是調出來的值。這個公式是為本專案選定的，後來發現它是一個既有公式的特例：品質工程中 Harrington 的雙側合意函數（1965）， <code class="rounded bg-white/5 px-1.5 py-0.5 font-['JetBrains_Mono',monospace] text-[11px] text-[#c3ccd8]">exp(−|y′|ⁿ)</code>，取 n = 2，界限設在兩倍閥值，兩者在界限處都是 1/e ≈ 37。曲線和 4 都不是依比賽結果擬合的；真正必須正確的是底下的閥值（見 <a class="text-[#98a4b5] underline decoration-white/30 underline-offset-4 hover:text-[#e4e9f0] hover:decoration-[#f2b84b]" href="../method/#6-validation-so-far">方法 · 驗證</a>).</p>
+    </div>
+    <div class="mt-12 overflow-x-auto rounded-2xl bg-[#0f1828] ring-1 ring-inset ring-white/10">
+      <table class="w-full min-w-[36rem] border-collapse text-left text-sm">
+        <thead class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]"><tr><th class="px-5 py-3 font-normal">半部</th><th class="px-5 py-3 font-normal">項目</th><th class="px-5 py-3 font-normal">量測內容</th><th class="px-5 py-3 font-normal">計分方向</th></tr></thead>
+        <tbody>
+<tr class="border-0 border-t border-solid border-white/10"><td class="px-5 py-3 align-top" rowspan="2"><span class="block text-[#e4e9f0]">投球結果</span><span class="mt-0.5 block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></td><td class="px-5 py-3 text-[#e4e9f0]">球速</td><td class="px-5 py-3">速球球速（平均 km/h）</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">只計下降</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">控球</td><td class="px-5 py-3">好球率</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">只計下降</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/10"><td class="px-5 py-3 align-top" rowspan="3"><span class="block text-[#e4e9f0]">機制</span><span class="mt-0.5 block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></td><td class="px-5 py-3 text-[#e4e9f0]">姿勢</td><td class="px-5 py-3">出手畫面中的側傾與前傾、肩線與髖線、手臂角度、出手點</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">雙向</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">時序</td><td class="px-5 py-3">出手前的髖部領先與開肩時間（ms）</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">雙向</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">一致性</td><td class="px-5 py-3">出手點的擴散度</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">只計變大</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-12">
+      <h3 class="m-0 text-base font-medium text-[#e4e9f0]">兩種分數，絕不混用</h3>
+      <p class="mb-0 mt-2 max-w-2xl text-sm leading-6">同一場比賽內沒有每天的差異，所以單場分數可以用較嚴的閥值。跨場比較時，閥值還必須容納正常的場間差異。</p>
+      <div class="mt-5 overflow-x-auto rounded-2xl bg-[#0f1828] ring-1 ring-inset ring-white/10">
+      <table class="w-full min-w-[36rem] border-collapse text-left text-sm">
+        <thead class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]"><tr><th class="px-5 py-3 font-normal"></th><th class="px-5 py-3 font-normal">單場分數</th><th class="px-5 py-3 font-normal">PSI（比賽與比賽之間）</th></tr></thead>
+        <tbody>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">比較</td><td class="px-5 py-3">後半段和前半段</td><td class="px-5 py-3">這場出賽與前三場</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">閥值</td><td class="px-5 py-3">只計抽樣誤差</td><td class="px-5 py-3">抽樣加上正常的比賽間變化</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">虛無檢定</td><td class="px-5 py-3">同一場比賽的隨機兩半</td><td class="px-5 py-3">將一季賽事的出場順序打亂</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">聯盟檢查</td><td class="px-5 py-3">隨機兩半中 0% 被標記；21% 的先發在後半段球速下降</td><td class="px-5 py-3">56% 的出賽超過「95%」閥值：正在放寬</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="mb-0 mt-3 text-xs text-[#7a8699]">聯盟檢查：Rebas 開放資料中 2023–2025 年所有中職出賽，1,563 場先發與 2,798 場後援。</p>
+    </div>
+  </section>
+
+  <section id="status" class="pb-20">
+    <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">目前進度</p>
+    <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">量測站得住，預測還沒被證明。</h2>
+    <div class="mt-8 grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <h3 class="m-0 text-base font-medium text-[#e4e9f0]">數據目前能支持的論點</h3>
+        <ul class="mb-0 mt-4 space-y-3 pl-5 text-sm leading-6">
+          <li><span class="text-[#e4e9f0]">99%</span> 的人工標記出手（共 228 球）都在 ±2 影格內找到</li>
+          <li><span class="text-[#e4e9f0]">1.4°</span> ：同一球在兩個轉播剪輯中，側傾差異的中位數</li>
+          <li><span class="text-[#e4e9f0]">0.1–0.5°</span> ：同一訊號來源不同剪輯之間，鏡頭方向的差異</li>
+          <li><span class="text-[#e4e9f0]">0%</span> 的同場隨機兩半被標記：雜訊不會被當成變化</li>
+        </ul>
+      </div>
+      <div class="rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <h3 class="m-0 text-base font-medium text-[#e4e9f0]">目前數據還無法呈現出來的</h3>
+        <ul class="mb-0 mt-4 space-y-3 pl-5 text-sm leading-6">
+          <li>在 1,563 場中職先發中，投球結果分數偏低並不能預測下一場先發 (<span class="text-[#e4e9f0]">ρ = −0.02</span>).</li>
+          <li>場間閥值太嚴：速球球速在出賽之間會變化 ±2 km/h（標準差 1.94），而不是只計抽樣時預估的 0.78。</li>
+          <li>40 部已知變動影片都已標好場地地標，機制分數仍只涵蓋 14 次事件出賽中的 3 次：精華影片幾乎拍不到後援投手，需要全場影片。</li>
+        </ul>
+      </div>
+    </div>
+    <p class="mb-0 mt-4 max-w-2xl text-sm leading-6">下一步：用量到的場間差異放寬每個場間閥值並重跑聯盟測試、分析高中盃賽的全場影片、做出練習模式，並請教練告訴我們哪些標記重要。詳見 <a class="text-[#e4e9f0] underline decoration-white/30 underline-offset-4 hover:decoration-[#f2b84b]" href="../method/#6-validation-so-far">方法</a> 頁面。</p>
+  </section>
+
+  <section id="reports" class="pb-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">線上報告</h2>
+    <div class="mt-5 grid gap-3 md:grid-cols-2"><a href="../pitchers/" class="rounded-2xl bg-[#0f1828] p-5 no-underline ring-1 ring-inset ring-white/10 transition hover:bg-[#132036] hover:ring-white/20"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">盃賽 · 高中</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">2025 黑豹旗 · 羅東高工、平鎮高中</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">8 位投手、10 場比賽：用球數對照休息規定、球速、姿勢、單場分數。</p></a><a href="../hu/" class="rounded-2xl bg-[#0f1828] p-5 no-underline ring-1 ring-inset ring-white/10 transition hover:bg-[#132036] hover:ring-white/20"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">賽季 · 中職</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">胡智為 · 2025–2026</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">16 場先發與 4 場後援，310 球，人工檢查。</p></a><a href="../cpbl2024g4_0000_6000/" class="rounded-2xl bg-[#0f1828] p-5 no-underline ring-1 ring-inset ring-white/10 transition hover:bg-[#132036] hover:ring-white/20"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">單場比賽</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">2024 中華職棒二軍總冠軍賽 G4 味全龍二軍 vs 統一獅二軍</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">一場轉播的每一球：用球數、球速、出手姿勢。</p></a></div>
+  </section>
+
+
+  <section id="pro" class="grid items-center gap-10 border-0 border-t border-solid border-white/5 py-16 md:grid-cols-[1fr_1.1fr]">
+    <div class="min-w-0">
+      <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">職業層級也適用</p>
+      <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">同一套流程也能跑中職影片</h2>
+      <p class="mb-0 mt-3 text-sm leading-6">PSA 為學校而做，核心卻是任何層級都能用的工具。在對上 Rebas 開放資料的中職精華影片上，它追蹤一位投手的整季；上面的聯盟檢查則涵蓋 2023 到 2025 年的每一場中職出賽。</p>
+    </div>
+    <figure class="m-0 rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><figcaption class="text-sm"><span class="block text-[#e4e9f0]">胡智為 · 每場出賽的 PSI，2025–2026</span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">100 = 投得和前 3 場一樣</span></figcaption><svg viewBox="0 0 420 240" class="mt-3 block w-full" role="img" aria-label="每場出賽的 PSI；最低 5/24，58"><g stroke="#1f2a3d" stroke-width="1"><line x1="30" y1="20.0" x2="410" y2="20.0"></line><line x1="30" y1="110.0" x2="410" y2="110.0"></line><line x1="30" y1="200.0" x2="410" y2="200.0"></line></g><g font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8699"><text x="24" y="24.0" text-anchor="end">100</text><text x="24" y="114.0" text-anchor="end">50</text><text x="24" y="204.0" text-anchor="end">0</text></g><polyline points="40.0,59.6 60.0,47.0 80.0,34.4 100.0,50.6 120.0,34.4 140.0,32.6 160.0,38.0 180.0,32.6 200.0,43.4 220.0,61.4 240.0,29.0 260.0,20.0 280.0,23.6 300.0,95.6 320.0,54.2 340.0,23.6 360.0,32.6 380.0,23.6 400.0,32.6" fill="none" stroke="#6f9ee8" stroke-width="2"></polyline><g fill="#6f9ee8" stroke="#0f1828" stroke-width="2"><circle cx="40.0" cy="59.6" r="4.5"></circle><circle cx="60.0" cy="47.0" r="4.5"></circle><circle cx="80.0" cy="34.4" r="4.5"></circle><circle cx="100.0" cy="50.6" r="4.5"></circle><circle cx="120.0" cy="34.4" r="4.5"></circle><circle cx="140.0" cy="32.6" r="4.5"></circle><circle cx="160.0" cy="38.0" r="4.5"></circle><circle cx="180.0" cy="32.6" r="4.5"></circle><circle cx="200.0" cy="43.4" r="4.5"></circle><circle cx="220.0" cy="61.4" r="4.5"></circle><circle cx="240.0" cy="29.0" r="4.5"></circle><circle cx="260.0" cy="20.0" r="4.5"></circle><circle cx="280.0" cy="23.6" r="4.5"></circle><circle cx="320.0" cy="54.2" r="4.5"></circle><circle cx="340.0" cy="23.6" r="4.5"></circle><circle cx="360.0" cy="32.6" r="4.5"></circle><circle cx="380.0" cy="23.6" r="4.5"></circle><circle cx="400.0" cy="32.6" r="4.5"></circle></g><circle cx="300.0" cy="95.6" r="6" fill="#f2b84b" stroke="#0f1828" stroke-width="2"></circle><text x="289.0" y="113.6" text-anchor="end" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">5/24 · 58</text><g font-family="JetBrains Mono, monospace" font-size="10" fill="#7a8699" text-anchor="middle"><text x="40.0" y="222">4/9</text><text x="100.0" y="222">8/8</text><text x="160.0" y="222">9/9</text><text x="220.0" y="222">4/6</text><text x="280.0" y="222">5/12</text><text x="340.0" y="222">8/1</text><text x="400.0" y="222">8/23</text></g></svg></figure>
+  </section>
+
+  <section id="practice" class="border-0 border-t border-solid border-white/5 py-16">
+    <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">即將推出</p>
+    <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">練習模式：在比賽之間檢查投手狀態</h2>
+    <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">在 Live AB（實戰打擊練習）時，把手機架在投手丘正後方的三腳架上，就能得到和中外野攝影機一樣的視角，距離只有 15–25 公尺而不是 100 公尺。每次練習一位投手，用球數由影片計算；好壞球和測速槍讀數可自行選填。</p>
+    <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">每次練習只和他自己之前的練習比較，不和比賽混在一起。</p>
+    <p class="mb-0 mt-3 text-xs text-[#7a8699]">規劃中：尚未開發，也尚未測試。</p>
+  </section>
+
+  <section class="grid gap-8 border-0 border-t border-solid border-white/5 py-12 sm:grid-cols-2">
+    <div>
+      <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">需要什麼</h2>
+      <ul class="mb-0 mt-3 space-y-2 pl-5 text-sm leading-6"><li>中外野後方一台固定攝影機拍的比賽影片，例如免費的賽事直播</li><li>一台 Mac（Apple Vision，macOS 內建）</li><li>有逐球資料就用，沒有就讀記分板</li></ul>
+    </div>
+    <div>
+      <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">限制</h2>
+      <ul class="mb-0 mt-3 space-y-2 pl-5 text-sm leading-6"><li>每場的攝影機角度要一致，否則要標記場地地標來校正</li><li>精華影片每場先發只有 10–25 球；全場影片則是每一球</li><li>分數標記的是變化，不是好壞</li><li>不是醫療評估</li></ul>
+    </div>
+  </section>
+
+  <footer class="border-0 border-t border-solid border-white/5 py-6 text-xs leading-relaxed text-[#7a8699]">影片：YouTube 上的公開轉播與精華，皆連結到原始影片，權利屬於原權利人。資料：Rebas 開放資料（ODC-By）、中職逐球紀錄。為 2026 野革盃 Rebas 棒球資料黑客松而做。</footer>
+</div>
+<script>
+// Algorithm examples: one open at a time, in a full-width panel under the cards, so the cards never change height.
+(() => {
+  const box = document.getElementById("examples");
+  const buttons = [...document.querySelectorAll("[data-ex]")];
+  function show(n) {
+    for (const b of buttons) b.setAttribute("aria-expanded", String(b.dataset.ex === n));
+    for (const p of box.querySelectorAll(".ex-panel")) p.hidden = p.id !== `ex-${n}`;
+    box.hidden = !n;
+  }
+  for (const b of buttons) b.addEventListener("click", () => show(b.getAttribute("aria-expanded") === "true" ? "" : b.dataset.ex));
+  box.addEventListener("click", e => { if (e.target.closest("[data-close]")) show(""); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSA · Method</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+
+/* Layout: one reading column (max 1040px). Scorebug-style dark readouts carry the numbers; everything else stays quiet. */
+/* Same look as the site's home page (lab/src/psa_lab/home_template.html): navy with a faint grid, three muted text
+   levels, amber for the one accent (and the PSI line on the season page). One deliberate dark look. */
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --panel: #121b2c;
+  --ink: #e4e9f0;
+  --ink-2: #98a4b5;
+  --muted: #7a8699;
+  --line: #1f2a3d;
+  --accent: #f2b84b;
+  --accent-soft: #2e2716;
+  --bug-bg: #121b2c;
+  --bug-ink: #e4e9f0;
+  --bug-dim: #98a4b5;
+  --bug-amber: #f2b84b;
+  --s1: #6f9ee8; --s2: #f2b84b; --s3: #5cc98a;
+  --good: #5cc98a; --good-bg: #16302a;
+  --warn: #e2b04a; --warn-bg: #33291a;
+  --bad: #ef8a7c; --bad-bg: #3a2024;
+  --display: "Inter", "Noto Sans TC", system-ui, sans-serif;
+  --body: "Inter", "Noto Sans TC", system-ui, -apple-system, "PingFang TC", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background-color: var(--bg); color: var(--ink);
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  font: 15px/1.6 var(--body);
+  padding-inline: 16px; padding-block: 0 64px;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h2 { font: 600 24px/1.2 var(--display); letter-spacing: -0.01em; }
+h3 { font: 600 17px/1.3 var(--display); }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 20px; }
+.lede { color: var(--ink-2); font-size: 16px; }
+
+/* Header */
+header { padding-top: 40px; display: grid; gap: 18px; }
+header h1 { font: 600 clamp(34px, 6vw, 52px)/1.08 var(--display); letter-spacing: -0.02em; }
+header h1 small { display: block; font: 500 18px/1.3 var(--body); color: var(--ink-2); margin-top: 10px; letter-spacing: 0; }
+.source { display: flex; flex-wrap: wrap; gap: 6px 16px; font: 13px/1.5 var(--mono); color: var(--muted); }
+
+/* Scorebug-style readout row */
+.bugrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--bug-bg); color: var(--bug-ink); border-radius: 8px; overflow: hidden; }
+.bugrow > div { padding: 14px 16px; display: grid; gap: 2px; border-left: 1px solid #ffffff14; }
+.bugrow > div:first-child { border-left: 0; }
+.bugrow .v { font: 500 30px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.bugrow .v em { font-style: normal; color: var(--bug-amber); }
+.bugrow .k { font: 12px/1.3 var(--body); color: var(--bug-dim); }
+@media (max-width: 640px) { .bugrow { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bugrow > div:nth-child(3) { border-left: 0; } .bugrow > div:nth-child(n+3) { border-top: 1px solid #ffffff14; } }
+
+/* Pipeline steps */
+.steps { display: grid; gap: 28px; counter-reset: step; }
+.step { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.step-head { display: grid; gap: 8px; align-content: start; }
+.step-head .n { font: 700 15px/1 var(--mono); color: var(--accent); }
+.step-head p { color: var(--ink-2); font-size: 14px; }
+@media (max-width: 760px) { .step { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+.shots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-content: start; }
+@media (max-width: 640px) { .shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.shot { position: relative; border-radius: 4px; overflow: hidden; outline: 2px solid transparent; }
+.shot.cf { outline-color: var(--accent); }
+.shot img { opacity: 0.55; }
+.shot.noimg { aspect-ratio: 16 / 9; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: flex-end; }
+.shot.noimg i { display: block; width: 100%; background: var(--line); }
+.shot.noimg.cf i { background: var(--accent-soft); }
+.note-box { font: 13px/1.5 var(--body); color: var(--ink-2); }
+.viewswitch { display: inline-flex; align-items: center; gap: 10px; font: 13px var(--body); color: var(--ink-2); }
+.shot.cf img { opacity: 1; }
+.shot span { position: absolute; left: 4px; bottom: 4px; font: 500 11px/1 var(--mono); background: var(--bug-bg); color: var(--bug-ink); padding: 3px 5px; border-radius: 3px; }
+.shot.cf span { background: var(--accent); color: var(--bg); }
+.bug { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 640px) { .bug { grid-template-columns: minmax(0, 1fr); } }
+.bug img { border-radius: 4px; }
+dl.kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font: 14px/1.4 var(--mono); }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; font-weight: 500; }
+.strip { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; align-items: start; align-content: start; }
+@media (max-width: 640px) { .strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } .strip figure:nth-child(-n+4) { display: none; } }
+.strip figure { margin: 0; display: grid; gap: 4px; }
+.strip img { border-radius: 3px; outline: 2px solid transparent; }
+.strip figure.rel img { outline-color: var(--bug-amber); }
+.strip figcaption { font: 11px/1 var(--mono); color: var(--muted); text-align: center; }
+.strip figure.rel figcaption { color: var(--ink); font-weight: 500; }
+.srcswitch { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--panel); width: fit-content; }
+.srcswitch button { border: 0; background: transparent; padding: 8px 14px; font: 500 13px/1 var(--mono); cursor: pointer; color: var(--ink-2); }
+.srcswitch button[aria-checked="true"] { background: var(--ink); color: var(--bg); }
+.srcnote { font: 13px/1.5 var(--body); color: var(--ink-2); max-width: 72ch; }
+td.off { color: var(--warn); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 13px/1.4 var(--body); color: var(--ink-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend svg { color: var(--ink-2); }
+.fields { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; align-items: flex-start; }
+.chip { font: 500 12px/1 var(--mono); padding: 6px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--ink); }
+
+/* Outing board */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { font: 600 15px/1 var(--body); padding: 10px 14px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.tab[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--sw); }
+.tab .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sw); }
+.tab small { font: 12px/1 var(--mono); color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 4px; }
+.tile .k { font: 13px/1.3 var(--body); color: var(--ink-2); }
+.tile .v { font: 700 32px/1.05 var(--display); font-variant-numeric: tabular-nums; }
+.tile .s { font: 12px/1.4 var(--mono); color: var(--muted); }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+.chart.wide { grid-column: 1 / -1; }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 14px 8px; display: grid; gap: 6px; position: relative; min-width: 0; }
+.chart header { padding: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.chart h3 { font-size: 18px; }
+.chart .note { font: 12px/1.3 var(--mono); color: var(--muted); }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart svg text { font: 11px var(--mono); fill: var(--muted); }
+.chart .grid line { stroke: var(--line); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--bug-bg); color: var(--bug-ink); font: 12px/1.45 var(--mono); padding: 8px 10px; border-radius: 4px; white-space: nowrap; z-index: 2; }
+.tip b { color: var(--bug-amber); font-weight: 500; }
+.badge { font: 500 11px/1 var(--mono); padding: 4px 6px; border-radius: 3px; letter-spacing: 0.04em; }
+.badge.good { background: var(--good-bg); color: var(--good); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+
+/* Pitch log */
+.log { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 760px) { .log { grid-template-columns: minmax(0, 1fr); } }
+.detail { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 760px) { .detail { position: static; } }
+.detail .img { background: var(--bug-bg); aspect-ratio: 750 / 730; display: grid; place-items: center; color: var(--bug-dim); font: 13px var(--mono); text-align: center; padding: 12px; }
+.detail .img img { width: 100%; height: 100%; object-fit: cover; }
+.detail .body { padding: 12px 14px; display: grid; gap: 8px; }
+.detail .body .v { font: 700 24px/1 var(--display); }
+.tablebox { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; max-height: 620px; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font: 13px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 500; font-size: 12px; z-index: 1; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--accent-soft); }
+tbody tr[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+td .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+td.dim { color: var(--muted); }
+
+/* Findings */
+.verdicts { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.verdicts table { font: 14px/1.45 var(--body); }
+.verdicts th, .verdicts td { text-align: left; white-space: normal; vertical-align: top; padding: 12px 14px; }
+.verdicts td:first-child { font-weight: 600; white-space: nowrap; }
+.verdicts td .num { font-family: var(--mono); }
+ol.next { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 72ch; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .tab, tbody tr { transition: background-color .12s, box-shadow .12s; } }
+
+/* Pitcher page */
+.rules { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 6px; font: 14px/1.55 var(--body); color: var(--ink-2); max-width: 78ch; }
+.rules b { color: var(--ink); font-weight: 600; }
+.timeline-box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: grid; gap: 8px; }
+.timeline-box svg { width: 100%; height: auto; display: block; }
+.timeline-box svg text { font: 11px var(--mono); fill: var(--muted); }
+.timeline-box svg .lbl { fill: var(--ink); font-weight: 500; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip.ok { background: var(--good-bg); color: var(--good); }
+.chip.flag { background: var(--bad-bg); color: var(--bad); }
+.overlays { display: grid; grid-template-columns: minmax(0, 520px); gap: 12px; }
+.ov { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: grid; gap: 8px; align-content: start; }
+.ov img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.ov .legend { display: grid; gap: 4px; font: 12px/1.4 var(--mono); color: var(--ink-2); }
+.ov .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+.tile.wide { grid-column: span 2; }
+td.parts { text-align: left; font: 12px/1.4 var(--mono); color: var(--muted); white-space: normal; min-width: 220px; }
+.gamelink { display: block; margin-top: 2px; font: 500 12px/1.3 var(--mono); color: var(--accent); text-decoration: none; }
+.gamelink:hover { text-decoration: underline; }
+.setup { font: 500 11px/1 var(--mono); padding: 3px 6px; border-radius: 3px; background: var(--accent-soft); color: var(--ink); }
+/* Top bar, as on the home page: brand on the left (links home), plain text links on the right. */
+.games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.games a { font: 500 14px/1.2 var(--body); color: var(--ink-2); text-decoration: none; padding: 0; border: 0; background: none; box-shadow: none; }
+.games a:first-child { color: var(--ink); font-weight: 600; margin-right: auto; }
+.games a:hover { color: var(--ink); }
+.games a[aria-current="page"] { color: var(--ink); box-shadow: none; border: 0; }
+
+/* Long-form reading: the repository README rendered as the site's Method page. */
+.wrap > *, section > *, header > * { min-width: 0; }
+.prose { max-width: 820px; display: block; }
+.prose > * + * { margin-top: 14px; }
+.prose h1 { font: 600 clamp(32px, 5vw, 44px)/1.1 var(--display); letter-spacing: -0.02em; margin-top: 8px; }
+.prose h2 { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); }
+.prose h3 { margin-top: 28px; }
+.prose p, .prose li { color: var(--ink-2); max-width: 72ch; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose ul, .prose ol { padding-left: 22px; display: grid; gap: 6px; }
+.prose a { color: var(--accent); }
+.prose code { font: 13px/1.5 var(--mono); color: var(--ink); background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+.prose pre { background: var(--panel); border-radius: 8px; padding: 14px 16px; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+.prose blockquote { margin: 0; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--panel); border-radius: 0 6px 6px 0; }
+.prose blockquote p { color: var(--ink-2); }
+.prose hr { border: 0; border-top: 1px solid var(--line); }
+.prose .tablewrap { overflow-x: auto; background: var(--panel); border-radius: 8px; }
+.prose table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.prose th, .prose td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; position: static; white-space: normal; }
+.prose th { font: 500 12px/1.4 var(--mono); color: var(--muted); background: none; }
+.prose td { color: var(--ink-2); font: 14px/1.5 var(--body); }
+.prose tr:last-child td { border-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <nav class="games" id="games" aria-label="Pages"></nav>
+</header>
+<article class="prose">
+<h1 id="psa-pitcher-status-analyzer">PSA · Pitcher Status Analyzer</h1>
+<p>Pitcher analysis from public game video. For every outing, PSA finds the pitcher's pitches in a broadcast or
+highlight video, matches each one to the official play-by-play, measures his body at the moment of release, and
+scores the outing against his own previous outings: <strong>PSI, the Pitcher Stability Index</strong> (100 = pitching like
+himself). It uses only free, public and open sources, so a school team with no budget can run it. The same core
+library is meant to serve any level of play.</p>
+<ul>
+<li>Live demo: https://hakexva.github.io/psa-demo/ (this document is also published there as the <em>Method</em> page)</li>
+<li>Built for the 2026 野革盃 Rebas Baseball Data Hackathon</li>
+<li>Status: working prototype. The measurements are validated; whether PSI predicts outcomes is <strong>not yet shown</strong>
+  (see <a href="#6-validation-so-far">Validation</a> and <a href="#7-limits">Limits</a>)</li>
+</ul>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-the-question">The question</a></li>
+<li><a href="#2-data">Data</a></li>
+<li><a href="#3-how-the-pipeline-works">How the pipeline works</a></li>
+<li><a href="#4-psi-the-algorithm">PSI: the algorithm</a></li>
+<li><a href="#5-baselines-what-each-outing-is-compared-with">Baselines: what each outing is compared with</a></li>
+<li><a href="#6-validation-so-far">Validation so far</a></li>
+<li><a href="#7-limits">Limits</a></li>
+<li><a href="#8-code-design-and-layout">Code: design and layout</a></li>
+<li><a href="#9-references">References</a></li>
+<li><a href="#10-rights-and-attribution">Rights and attribution</a></li>
+</ol>
+<hr />
+<h2 id="1-the-question">1. The question</h2>
+<p><em>Is this pitcher pitching like himself today?</em></p>
+<p>A box score says what happened, not whether a pitcher's delivery has drifted. Teams with tracking systems
+(TrackMan, Hawk-Eye) can see that; most school and amateur teams cannot. But their games are often broadcast
+(黑豹旗 on 公視+), and every CPBL game has highlights on YouTube and an official play-by-play. PSA turns that
+public material into a per-outing report: workload, velocity and strikes, and release posture and timing, each
+compared with the pitcher's own recent outings.</p>
+<p>PSA measures <strong>change</strong>, not quality. A low PSI says something moved; it does not say whether the change is good
+or bad, or why. It is for workload and consistency tracking, not medical assessment.</p>
+<p><strong>Later: practice mode (planned).</strong> Between games, a phone on a tripod behind the mound during live ABs takes the
+same view as the centre-field camera, from much closer, so a coach and a pitcher can check his status between games.
+One pitcher per session (his name typed once), pitch count from the video, and balls, strikes and radar readings
+optional. Sessions get their own baseline, never mixed with game outings. Not built or tested yet:
+<code>docs/practice-mode.md</code>.</p>
+<h2 id="2-data">2. Data</h2>
+<h3 id="video">Video</h3>
+<p>All video is public, watched from YouTube and processed locally. Pages link to the original video at the right
+moment; they do not host footage (the two single-game pages quote cropped frames for commentary).</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Set</th>
+<th>Videos</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>胡智為 (統一獅), 2025</td>
+<td>17</td>
+<td>game highlights of his 10 starts (統一獅 Uni Lions, 博斯, MOMO, 緯來, ELTA, CPBL channels)</td>
+</tr>
+<tr>
+<td>胡智為 (統一獅), 2026</td>
+<td>20</td>
+<td>game highlights of his 6 starts and 4 relief outings (two cuts per game: 緯來, ELTA, MOMO, DAZN, 統一獅, CPBL)</td>
+</tr>
+<tr>
+<td>2025 黑豹旗 · 羅東高工</td>
+<td>5</td>
+<td>full broadcasts on 公視+, one team's pitchers through a national high-school tournament</td>
+</tr>
+<tr>
+<td>CPBL 2024 farm Taiwan Series G4</td>
+<td>1</td>
+<td>full CPBLTV broadcast, the step-by-step demo</td>
+</tr>
+</tbody>
+</table></div>
+<p>Every video is listed with its URL and use in <code>docs/SOURCES.md</code>.</p>
+<h3 id="pitch-data">Pitch data</h3>
+<ul>
+<li><strong>Rebas Open Data</strong> (CPBL 2023-2025, per game / plate appearance / pitch, with pitch type and velocity),
+  ODC-By v1.0, attribution required. Used for 2025: each highlight pitch is matched to its row, which gives its
+  type, speed, runners and result (<code>psa-rebas</code>).</li>
+<li><strong>CPBL official site</strong> play-by-play (2026, which Rebas does not cover yet): per pitch the pitcher's running
+  pitch count, ball-strike count, batter, runners, outs and result, but no pitch type or speed. Speeds then come
+  from the broadcast scorebug, and a fastball is a pitch of 143 km/h or more (in his 2025 Rebas data that keeps
+  96% of his fastballs and 3% of other pitches). Fetched once per game and cached; raw data is not republished
+  (<code>psa-cpbl</code>).</li>
+<li><strong>Scorebug</strong>: without any play-by-play (amateur games), pitch counts, speeds and counts are read from the
+  broadcast's on-screen graphics alone.</li>
+</ul>
+<h3 id="our-own-labels">Our own labels</h3>
+<ul>
+<li><strong>Release frames</strong>: the project owner marked the exact release frame of 510 pitches on a labeling page (228 of
+  胡智為's 2025 pitches, 282 from the 黑豹旗 and CPBL farm games). They train and test the release picker.</li>
+<li><strong>Field landmarks</strong>: 13 points per video (batter's-box corners, plate, rubber ends) for the 17 videos of 2025, to
+  solve each camera's direction.</li>
+</ul>
+<h3 id="reference-dimensions-and-rules">Reference dimensions and rules</h3>
+<ul>
+<li>Field dimensions (batter's boxes 4 x 6 ft, plate 17 in, rubber 60 ft 6 in from the plate's back point, mound
+  10 in high) from the official rules, via Wikipedia "Batter's box".</li>
+<li>CTBA 2025 黑豹旗 rule E4.11 (pitch counts and rest) for the tournament workload check.</li>
+</ul>
+<h2 id="3-how-the-pipeline-works">3. How the pipeline works</h2>
+<p>One command, <code>psa-report</code>, runs the whole chain for a pitcher's series of games; each step is also its own
+command. Every step runs locally on a Mac (Apple Vision is part of macOS); one highlight video takes about
+4-9 minutes.</p>
+<pre><code>video ──&gt; 1 pitching shots ──&gt; 2 scorebug ──&gt; 3 pose ──&gt; 4 release frame ──&gt; 5 match to play-by-play
+                                                                               │
+report &lt;── 9 pages &lt;── 8 PSI &lt;── 7 camera handling &lt;── 6 measurements &lt;───────┘
+</code></pre>
+<ol>
+<li><strong>Find the pitching shot</strong> (<code>shots.py</code>). Broadcasts cut between cameras; only the centre-field view behind the
+   pitcher shows his delivery. Each frame becomes a tiny normalised colour thumbnail (scorebug blanked) and is
+   compared with a reference centre-field frame. The reference is picked per video: candidate frames shortly
+   before scorebug updates are clustered and the first cluster that passes a pose check (pitcher low in the frame,
+   batter and catcher above) wins. It can be pinned by hand when the automatic pick is wrong.</li>
+<li><strong>Read the scorebug</strong> (<code>scorebug.py</code>, <code>highlights.py</code>). Apple Vision text recognition reads the on-screen
+   graphics about twice a second: batter, pitcher, ball-strike count, the pitcher's running pitch count and the
+   last pitch's speed. Layouts differ by broadcaster and season (2025: "PITCHES 50", "NP 42", "用球數25", "P: 15";
+   2026: "10球", "P:31", "NP： | 1", velocity in its own box), so they are parsed by pattern, with per-broadcaster
+   settings in <code>lab/profiles/*.toml</code>.</li>
+<li><strong>Track the pitcher's pose</strong> (<code>pose.py</code>). Apple Vision body pose runs on every pitching-shot frame; the pitcher
+   is the tracked person low in the frame.</li>
+<li><strong>Find the release frame</strong> (<code>release_model.py</code>). A gradient-boosting classifier (scikit-learn
+   HistGradientBoosting) scores every frame of a shot on torso-normalised pose features and how they change over
+   the neighbouring frames; the highest score is the release. Held out one whole start at a time, it lands within
+   ±2 frames (±67 ms) of the hand label on <strong>99%</strong> of 228 CPBL releases (±1 frame: 98%); a hand-written rule
+   managed 14-51%. Hand labels, where they exist, replace the picker's frame.</li>
+<li><strong>Match each pitch to the play-by-play</strong> (<code>highlights.py</code>). The scorebug's pitch count before the pitch, the
+   count and the batter pin a video pitch to its exact play-by-play row. Highlights run in game order, so matched
+   neighbours bound ambiguous ones; the pitch that ends a plate appearance breaks remaining ties.</li>
+<li><strong>Measure the release</strong> (<code>pitcher.py</code>, <code>delivery.py</code>). At the release frame, in the image: side lean (trunk tilt
+   to the glove side), forward lean (from the shortening of the torso), shoulder line and hip line angles, arm slot,
+   and the release point (height above the hips and distance to the side, in torso lengths). From the frames
+   before release: hip lead (how much earlier the hips open than the shoulders; hip-shoulder separation shrinks
+   with fatigue, Erickson 2016) and shoulder opening time. A plausibility rule drops misread throwing arms: the
+   wrist must be detected with confidence, sit 1.2-2.6 torso lengths above the hips and 0.5-2.2 out to the side,
+   with the arm nearly straight (shoulder-to-wrist reach ≥ 0.9 torso lengths).</li>
+<li><strong>Handle the camera</strong> (<code>pitcher.py</code>, <code>landmarks.py</code>). Angles seen from different stadiums are not directly
+   comparable. Three levels, best first:</li>
+<li><strong>Field geometry</strong>: the 13 landmarks, labeled once per video, give the camera's direction and focal length
+     (least squares on the reprojection error, with a soft prior that the camera is about 400 ft out). Joints are
+     then projected onto the vertical plane through the release point, as if seen from straight behind. For the
+     2025 cameras this moved angles by only 0.24-0.32° (median): CPBL centre-field cameras sit 4-7° toward third
+     base and 3-4° above the pitcher.</li>
+<li><strong>Other pitchers</strong>: every other pitcher in the same videos is measured too (415 releases from 63 pitchers),
+     and camera offsets are fitted with a mixed model (value ~ camera + pitcher, random game effect), leaving the
+     pitcher being scored out. The offsets' uncertainty is added to the noise threshold.</li>
+<li><strong>Same camera only</strong>: compare with earlier outings under the same stadium and broadcast feed.</li>
+<li><strong>Score the outing</strong>: PSI, below.</li>
+<li><strong>Build the pages</strong> (<code>hu_study.py</code>, <code>pitcher.py</code>, <code>home.py</code>, <code>publish.py</code>). Static HTML pages: a season report
+   per pitcher, a tournament page, single-game pages, and the landing page, published to GitHub Pages
+   (<code>psa-publish</code>).</li>
+</ol>
+<h3 id="camera-geometry-in-detail">Camera geometry, in detail</h3>
+<p>Step 7's field-geometry level, as implemented in <code>lab/src/psa_lab/landmarks.py</code>. Drawn to scale in 3D, with the
+real solved camera of 2025-08-26: https://hakexva.github.io/psa-demo/method/camera/</p>
+<p><strong>Field coordinates</strong> (inches, from the rules): origin at the plate's back point, y toward the pitcher, x to the
+right as seen from centre field, height up.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Landmark</th>
+<th>Position (x, y, height)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plate front corners</td>
+<td>(±8.5, 17, 0)</td>
+</tr>
+<tr>
+<td>Plate back point</td>
+<td>(0, 0, 0)</td>
+</tr>
+<tr>
+<td>Batter's-box corners</td>
+<td>x = ±14.5 (inner) and ±62.5 (outer); y = 44.5 (front) and −27.5 (back)</td>
+</tr>
+<tr>
+<td>Rubber ends</td>
+<td>(±12, 726, 10 in up: mound height)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>1. Solve the camera, once per video.</strong> A pinhole camera without lens distortion: square pixels, optical centre at
+the image centre (960, 540), and seven unknowns, the focal length f, the rotation R (3) and the translation t (3). A
+field point X appears at</p>
+<pre><code>u = K (R X + t),  K = [[f, 0, 960], [0, f, 540], [0, 0, 1]]   (then divided by its third coordinate)
+</code></pre>
+<p>The fit is least squares on the pixel error between each landmark's predicted position and its click, plus a weak
+pull toward a camera 400 ft from the plate (centre-field cameras sit there; with a long lens, closer and wider looks
+almost the same as farther and longer, and the angle correction depends on the direction, not the distance):</p>
+<pre><code>minimise  Σ ‖project(Xᵢ) − clickᵢ‖²  +  (3 · (camera distance − 400 ft) / 40 ft)²
+</code></pre>
+<p>It needs 5 or more of the 13 points (7 unknowns, 2 equations per point). The start is a camera 400 ft out and 30 ft
+up, aimed at the plate, with the focal length from the boxes' apparent width. Output: the camera's position,
+azimuth and elevation seen from the pitcher, and the pixel error per point (fits on the 2025 videos: 4.8–10.5 px
+rms; chalk lines are 4–6 px wide).</p>
+<p><strong>2. Measure on the release plane, every release.</strong> At release the pitcher is about 3 ft in front of the rubber, so
+the measurement plane is the vertical plane y = 690 in, square to the mound–plate line. Each body keypoint (pixel u,
+v) is traced back along its camera ray to that plane:</p>
+<pre><code>d = Rᵀ K⁻¹ (u, v, 1),   C = −Rᵀ t   (camera centre),   X = C + s·d  with s such that X.y = 690
+</code></pre>
+<p>which gives the joint's (sideways, up) position in inches, as if seen from straight behind the pitcher. The posture
+angles are then read on the plane instead of the image:</p>
+<ul>
+<li>side lean (trunk) = atan2(|x_shoulders − x_hips|, height_shoulders − height_hips), using the mid-points;</li>
+<li>shoulder line, hip line = angle of the left–right line from horizontal;</li>
+<li>arm slot = atan2(height_wrist − height_shoulder, |x_wrist − x_shoulder|), throwing side;</li>
+<li>release height and side = the wrist relative to the hips, divided by torso length.</li>
+</ul>
+<p><strong>3. In PSI.</strong> Outings from different cameras are compared on these plane angles, and each camera's remaining
+direction uncertainty (0.3°) is added to the posture threshold in quadrature, √(SE² + 0.3²). Not corrected: forward
+lean and anything along the camera's line of sight (the plane removes only sideways and up); timing (milliseconds)
+does not depend on the camera.</p>
+<h2 id="4-psi-the-algorithm">4. PSI: the algorithm</h2>
+<p>PSI asks, per outing: is he pitching like his own baseline (section 5)? 100 means yes.</p>
+<p><strong>Step 1, change in noise units.</strong> For each part, the change from the baseline is divided by the smallest change
+the measurement can detect at 95%, so a change at the edge of noise counts as 1:</p>
+<ul>
+<li>medians of per-pitch values (posture, timing): d = |median_now − median_base| ÷ (1.96 · s · √(1/n_now + 1/n_base)),
+  with s the pitch-to-pitch scatter around each sample's own median, pooled;</li>
+<li>velocity: on season reports the same with means (speeds are whole km/h, so a median moves in 1 km/h steps; the
+  tournament page uses medians); only drops count;</li>
+<li>command (strike rate): a two-proportion test, 1.96 · √(p(1−p)(1/n_now + 1/n_base)); only drops count;</li>
+<li>consistency (release-point spread): ln(spread ratio) ÷ (1.96 × the standard error of both outings' ln spread,
+  by bootstrap resampling of their pitches); only a wider spread counts;</li>
+<li>across cameras, the camera's uncertainty (offset error, or 0.3° with field geometry) is added to the
+  threshold in quadrature;</li>
+<li>a part made of several metrics (posture: side lean, forward lean, arm slot, release height and side, shoulder
+  and hip lines) takes the root-mean-square of their d.</li>
+</ul>
+<p><strong>Step 2, part score.</strong> score = 100 · e^(−d²/4), where e ≈ 2.718 is the base of the natural logarithm (so
+e^x is exp(x)) and d is the change from step 1 in units of the detection threshold. 100 with no change, 94 at
+half the threshold, 78 at the threshold, 60 at 1.43×, 37 at twice it.</p>
+<p>Why this shape (a bell curve, the shape of the normal distribution):</p>
+<ul>
+<li><strong>Units drop out.</strong> d turns km/h, degrees, milliseconds and strike rates into one scale, "how many detectable
+  changes", so parts can be averaged.</li>
+<li><strong>Flat near zero.</strong> A change well inside the noise costs almost nothing (94 at d = 0.5), so ordinary scatter
+  does not pull scores down.</li>
+<li><strong>No cliff.</strong> A pass/fail rule at the threshold would score d = 0.99 and d = 1.01 as opposites. The bell falls
+  smoothly, and faster the larger the change (it goes with d², like a squared error).</li>
+<li><strong>Bounded.</strong> Always between 0 and 100, so one wild part cannot make an average negative.</li>
+<li><strong>The constant 4 sets the bands.</strong> A change exactly at the 95% threshold scores 78, just short of "steady"
+  (80). A part scores below 60 ("flagged") only at d ≥ 1.43, a change of about 2.8 standard errors, which
+  measurement noise alone reaches about 0.5% of the time (two-sided).</li>
+</ul>
+<p>Example (胡智為's fastball, velocity part, previous three outings as baseline):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Outing</th>
+<th>Change</th>
+<th>Fastballs</th>
+<th>Threshold</th>
+<th>d</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-05-12</td>
+<td>−0.4 km/h</td>
+<td>10</td>
+<td>≈1.1</td>
+<td>0.35</td>
+<td>97</td>
+</tr>
+<tr>
+<td>2026-05-24</td>
+<td>−1.1 km/h</td>
+<td>6</td>
+<td>≈1.1</td>
+<td>1.00</td>
+<td>78</td>
+</tr>
+<tr>
+<td>2025-09-26</td>
+<td>−0.7 km/h</td>
+<td>47</td>
+<td>≈0.5</td>
+<td>1.31</td>
+<td>65</td>
+</tr>
+<tr>
+<td>2026-04-06</td>
+<td>−2.6 km/h</td>
+<td>6</td>
+<td>≈1.3</td>
+<td>1.99</td>
+<td>37</td>
+</tr>
+</tbody>
+</table></div>
+<p>The threshold shrinks with more pitches, so −0.7 km/h over 47 fastballs scores lower than −1.1 km/h over 6.</p>
+<p>e itself is a mathematical constant, not a parameter: any base gives the same curve with a different constant
+(e^(−d²/4) = 2^(−d²/(4 ln 2))); e is simply the conventional base. The formula was chosen for this project, and it turns out to
+be a special case of an established one: Harrington's two-sided desirability function (Harrington 1965),</p>
+<pre><code>d(y) = exp(−|y′|ⁿ),  y′ = (2y − (USL + LSL)) / (USL − LSL),
+</code></pre>
+<p>which maps a measurement y with lower and upper specification limits (LSL, USL) to a 0-1 score that is 1/e ≈ 0.37
+at either limit. With n = 2 and the limits at ±2 detection thresholds around the baseline, y′ = d/2 and
+exp(−(d/2)²) = e^(−d²/4): PSI's "37 at twice the threshold" is Harrington's 1/e point. The original paper is not
+openly available and was not read; the form is taken from the <code>desire</code> R package (Trautmann, Steuer, Mersmann,
+v1.0.7, 2013, <code>harrington2</code>), whose authors also derived its distribution (Trautmann and Weihs 2006).</p>
+<p>Desirability functions combine their scores with a geometric mean (Derringer and Suich 1980), where one bad part
+pulls the whole score down; PSI uses an arithmetic mean, which is why an outing can be steady overall with one part
+below 60.</p>
+<p>The shape and the constant are design choices, not values fitted to outcomes. What they rest on is the threshold
+in step 1. The league-wide test (section 6) found that threshold too tight for velocity, because it leaves out
+ordinary outing-to-outing variation.</p>
+<p><strong>Step 3, PSI.</strong> PSI = ½ · results + ½ · mechanics, where results = mean(velocity, command) and mechanics =
+mean(posture, timing, consistency). Parts that cannot be measured are left out of their half; if a whole half is
+missing, PSI is the other half. The 50/50 split is a project decision, not a research result: no study gives
+weights between results and mechanics (the closest published scores, Dillon 2025 and Ma 2021, are built
+differently). Both halves and every part are shown on each report.</p>
+<p>Example: 胡智為, 2025-08-08, first start back from relief. Velocity 100 (+3.5 km/h, a rise) and command 100, so
+results = 100. Posture 55 (side lean +4.8°, shoulder line +5.1°), timing 59 (shoulders open 22 ms later),
+consistency 82, so mechanics = 65. PSI = ½ · 100 + ½ · 65 = 83: steady overall, with two parts below 60. An
+average can hide one moved part, so the parts are always shown next to PSI.</p>
+<p><strong>Two separate scores.</strong> PSA reports two scores and never mixes them; each has its own threshold and its own
+null test.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>In-game score</th>
+<th>PSI (between games)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compares</td>
+<td>the pitcher's second half of one game (by pitch count) with his first half</td>
+<td>this outing with his baseline outings (section 5)</td>
+</tr>
+<tr>
+<td>Threshold</td>
+<td>pitch sampling only: inside one game there is no day-to-day variation to add</td>
+<td>pitch sampling <strong>plus</strong> real game-to-game variation (τ²); without τ² the league test flagged 56% of outings (section 6)</td>
+</tr>
+<tr>
+<td>Null test</td>
+<td>two random halves of the same game: at most 5% flagged</td>
+<td>game order shuffled within a season: at most 5% flagged (the same-game split cannot catch a threshold that is too tight across games)</td>
+</tr>
+<tr>
+<td>Reads as</td>
+<td>fatigue or a change during the game</td>
+<td>a change from his usual self</td>
+</tr>
+<tr>
+<td>Where</td>
+<td>demo, game and tournament pages (<code>lab/src/psa_lab/ingame.py</code>)</td>
+<td>season and tournament reports</td>
+</tr>
+</tbody>
+</table></div>
+<p>The in-game score uses the same parts and curve. Velocity uses fastballs: on the demo, pitches within 6 km/h of his
+fastest, since the scorebug has no pitch type; on tournament pages, the tournament's fastball split. Mechanics use
+only his most-used delivery (windup or stretch), so switching between them does not read as change. It needs no
+earlier outing, so every game gets one, including a pitcher's first.</p>
+<p>League-wide check of the in-game score (Rebas 2023-2025, results parts, <code>uv run psa-league --ingame</code>): random halves
+of the same outing flagged 0% of 2,014 starts and 481 relief outings, so the threshold holds within a game. In pitch
+order, the second half's velocity part was flagged in 21% of starts and 9% of relief outings (0.5% and 0.2% for
+random halves): a real, common within-game fastball drop. The combined in-game score flagged 3.5% of starts, because
+command rarely moves and averages the velocity drop down.</p>
+<p><strong>Reading it.</strong> 80+ steady; 60-79 worth a look; below 60 flagged. Reports name what moved (e.g. "side lean
++4.8°") only for outings below 80, because smaller raw differences across cameras are mostly camera offset.</p>
+<p><strong>Guard against noise.</strong> Every tournament run also scores two random halves of the same game against each other.
+They come from one pitcher on one day, so they should almost never be flagged; more than 5% would mean a part
+treats noise as change. This test caught a fixed 15% consistency tolerance that flagged 19% of same-game halves;
+with the bootstrap threshold it is 0% of 630 (see <code>docs/findings/pitfalls.md</code>).</p>
+<p><strong>Game score</strong> (the outcome PSI is checked against): Bill James's game score with earned runs only:
+50 + outs + 2 per full inning after the 4th + strikeouts − 2 · hits − 4 · earned runs − walks.</p>
+<h2 id="5-baselines-what-each-outing-is-compared-with">5. Baselines: what each outing is compared with</h2>
+<p>This is the authoritative definition; the code is <code>hu_study.py</code> (season reports, <code>BASE_N = 3</code>) and
+<code>pitcher.stability_index</code> (tournament pages).</p>
+<p><strong>Season reports (a rolling baseline: his previous 3 outings).</strong> A season has many outings, and a pitcher's
+delivery can change for good reasons; a rolling baseline follows gradual change and flags sudden change.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Compared with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Velocity, command</td>
+<td>his previous 3 outings (all their pitches)</td>
+</tr>
+<tr>
+<td>Posture, timing, consistency</td>
+<td>his previous 3 outings, using the best camera handling the outing has: field geometry (any camera), else other-pitcher offsets (any camera), else only earlier outings under the same camera</td>
+</tr>
+<tr>
+<td>First outing of the series</td>
+<td>none: it is the baseline and gets no PSI</td>
+</tr>
+</tbody>
+</table></div>
+<p>Starts and relief outings share one baseline, and the window crosses seasons (his first 2026 outing is compared
+with his last three 2025 starts).</p>
+<p><strong>Tournament pages (a fixed baseline).</strong> A tournament has 2-5 games per pitcher, too few to roll.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Compared with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Velocity, command</td>
+<td>his first outing of the tournament</td>
+</tr>
+<tr>
+<td>Consistency</td>
+<td>his earliest outing with measured deliveries</td>
+</tr>
+<tr>
+<td>Posture, timing</td>
+<td>the earliest earlier game under the same camera, else the earliest earlier game (camera-corrected)</td>
+</tr>
+<tr>
+<td>First outing</td>
+<td>none: it is the baseline and gets no PSI</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-validation-so-far">6. Validation so far</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Release frame vs hand label (held out one start at a time)</td>
+<td>within ±2 frames on 99% of 228 CPBL releases</td>
+</tr>
+<tr>
+<td>Same pitch, two broadcast cuts (measurement repeatability)</td>
+<td>side lean 1.4°, shoulder line 1.4°, arm slot 1.2° (median difference, 67 / 67 / 14 pairs)</td>
+</tr>
+<tr>
+<td>Camera direction from field markings</td>
+<td>cuts of the same feed agree within ~0.1-0.5°; correction to angles 0.24-0.32°</td>
+</tr>
+<tr>
+<td>Same-game half-split null test (consistency)</td>
+<td>0% of 630 flagged</td>
+</tr>
+<tr>
+<td>PSI vs game score, 胡智為 (15 starts, 2025-2026)</td>
+<td>Spearman ρ = 0.31, p = 0.26: <strong>no reliable link yet</strong></td>
+</tr>
+<tr>
+<td>Known change</td>
+<td>PSI caught his first start back from relief (2025-08-08): more side lean (+4.8°), shoulder line +5.1°, fastball +3-4 km/h, 0 earned runs. A real change, and a good outing: PSI flags change, not quality</td>
+</tr>
+<tr>
+<td>League-wide results half (<code>psa-league</code>, Rebas 2023-2025: 1,563 SP and 2,798 RP outings)</td>
+<td>flagged vs steady starters: next game score 52.2 vs 52.9 (ρ = −0.02, p = 0.46), absence &gt; 30 days 1.5% vs 1.6%. Relievers: absence 5.1% vs 2.3% (p = 0.047, one of ~10 tests). <strong>No predictive value shown</strong></td>
+</tr>
+<tr>
+<td>Velocity threshold vs real outing-to-outing change (same data)</td>
+<td>change from the previous-3 mean: SD 1.94 km/h observed vs 0.78 from pitch sampling; 56% of outings exceed the sampling-only threshold. <strong>The threshold is too tight</strong> (see below)</td>
+</tr>
+</tbody>
+</table></div>
+<p>What is established: the inputs are measured consistently and PSI notices delivery changes. What is not: that a
+low PSI predicts a worse outing, an injury or fatigue. The league-wide test found no predictive value in the
+results half, and showed why it flags so often: each part's threshold is built from within-outing noise only, so
+ordinary day-to-day variation (about ±2 km/h of fastball speed) counts as change. The proposed fix adds a
+between-outing variance to each threshold; it is not applied yet because it changes every published score.
+Running and planned: PSI at known-change events (2025 role switches and returns after 30+ days, 13 pitchers)
+against ordinary outings, within-game drift with pitch count on full broadcasts, and coach review of flagged
+outings.</p>
+<p>Noise we once mistook for signal, and the guard for each, is listed in
+<code>docs/findings/pitfalls.md</code>. Detailed findings: <code>docs/findings/</code>.</p>
+<h2 id="7-limits">7. Limits</h2>
+<ul>
+<li><strong>Highlights, not full games.</strong> Highlight videos show 10-25 of a starter's pitches, 92% of them the last pitch of
+  a plate appearance. Full-game video would give 60-90 pitches per start and remove that bias.</li>
+<li><strong>Low power for consistency.</strong> With 15-25 pitches a spread estimate is noisy: even a tripled spread usually
+  scores 50-70, not below 60.</li>
+<li><strong>2D video.</strong> Angles are measured in the image (or on one plane with field geometry). Single-camera 2D
+  measurement is less accurate than motion capture (Dobos 2025, Dunlevy 2005), which is why PSI only compares a
+  pitcher with himself under known camera conditions.</li>
+<li><strong>Small samples.</strong> One CPBL pitcher over two seasons and one high-school team: enough to build and check the
+  method, not to prove PSI's value.</li>
+<li><strong>2026 data.</strong> The CPBL play-by-play has no pitch types or speeds; speeds come from the scorebug and fastballs
+  are inferred by speed.</li>
+<li><strong>Phone video untested.</strong> A phone at a game would sit about 100 m from the mound with a small lens; the planned
+  practice mode puts it behind the mound at live ABs instead (<code>docs/practice-mode.md</code>).
+  No phone session has been recorded or measured yet.</li>
+</ul>
+<h2 id="8-code-design-and-layout">8. Code: design and layout</h2>
+<p><strong>Design principles.</strong> Free and local (Apple Vision on a Mac, open-source Python, public data); one command per
+step so each can be rerun and checked; every source logged in <code>docs/SOURCES.md</code>; numbers and page text generated
+from the same report files; measurements always relative to the pitcher's own baseline; noise thresholds measured,
+never assumed (checked by a null test and unit tests).</p>
+<pre><code>lab/
+  src/psa_lab/        the package (commands below)
+  profiles/*.toml     per-broadcaster scorebug and framing settings
+  models/             the learned release picker
+  data/series/*.json  series definitions (pitcher, games, videos, data source per outing)
+  data/label/**.json  hand labels (release frames, field landmarks)
+  tests/              pytest suite (~30 s, no video needed)
+  web/                Tailwind config for the landing page
+docs/                 research notes, findings, SOURCES.md
+</code></pre>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Module</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>psa-report</code></td>
+<td><code>report.py</code></td>
+<td>one command: videos → pitch data → scan → PSI → page, for a series</td>
+</tr>
+<tr>
+<td><code>psa-highlight</code></td>
+<td><code>highlights.py</code></td>
+<td>scan a highlight video: shots, scorebug, pose, releases, matched pitches</td>
+</tr>
+<tr>
+<td><code>psa-analyze</code></td>
+<td><code>analyze.py</code></td>
+<td>scan a full broadcast game (every pitch)</td>
+</tr>
+<tr>
+<td><code>psa-rebas</code>, <code>psa-cpbl</code></td>
+<td><code>rebas.py</code>, <code>cpbl.py</code></td>
+<td>pitch data from Rebas Open Data / the CPBL site</td>
+</tr>
+<tr>
+<td><code>psa-hu-study</code></td>
+<td><code>hu_study.py</code></td>
+<td>season study: per-outing PSI, camera handling, correlations, report</td>
+</tr>
+<tr>
+<td><code>psa-pitcher</code></td>
+<td><code>pitcher.py</code></td>
+<td>tournament study: workload vs rules, PSI per game, null test</td>
+</tr>
+<tr>
+<td><code>psa-landmarks</code></td>
+<td><code>landmarks.py</code></td>
+<td>field-landmark labeling page and camera solve</td>
+</tr>
+<tr>
+<td><code>psa-label</code></td>
+<td><code>label_tool.py</code></td>
+<td>release-frame labeling page</td>
+</tr>
+<tr>
+<td><code>psa-train-release</code>, <code>psa-eval</code>, <code>psa-tune</code></td>
+<td><code>release_model.py</code>, <code>evaluate.py</code>, <code>tune.py</code></td>
+<td>train and evaluate the release picker</td>
+</tr>
+<tr>
+<td><code>psa-status</code></td>
+<td><code>status.py</code></td>
+<td>within-game drift from a pitcher's opening pitches</td>
+</tr>
+<tr>
+<td><code>psa-demo</code>, <code>psa-publish</code></td>
+<td><code>build_demo.py</code>, <code>publish.py</code></td>
+<td>build the pages and publish to GitHub Pages</td>
+</tr>
+<tr>
+<td><code>psa-slides</code>, <code>psa-slides-breeze</code>, <code>psa-slides-edit</code></td>
+<td><code>slides.py</code>, <code>slides_breeze.py</code>, <code>slides_editor.py</code></td>
+<td>slides in English and Traditional Mandarin (<code>docs/slides/</code>), Breeze suggestions, local editor for the Mandarin lines (<code>--landing</code>: the landing page's lines)</td>
+</tr>
+<tr>
+<td>(with <code>psa-publish --home</code>)</td>
+<td><code>landing_mandarin.py</code></td>
+<td>the landing page in Traditional Mandarin at <code>/mandarin/</code>, from <code>docs/landing/mandarin.yml</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Run: <code>cd lab &amp;&amp; uv sync</code>, then for example <code>uv run psa-report data/series/hu.json</code>. Tests: <code>uv run pytest</code>.</p>
+<p>Not in this repository: game videos and generated outputs under <code>lab/data/</code> (tens of GB, re-created by the
+commands), the Rebas Open Data archive (download <code>CPBL-&lt;year&gt;-OpenData.zip</code> from
+https://github.com/rebas-tw/rebas.tw-open-data into <code>lab/data/rebas/</code>) and the cached CPBL pages (fetched again by
+<code>psa-cpbl</code>).</p>
+<h2 id="9-references">9. References</h2>
+<p>Peer-reviewed unless marked. Full list with context: <code>docs/SOURCES.md</code> §4 and
+<code>docs/research/</code>.</p>
+<p><strong>Scoring method (part score curve)</strong>
+- Harrington 1965, <em>Industrial Quality Control</em> 21:494-498 — the desirability function: each response mapped to a
+  0-1 scale with exponential curves, then combined. The two-sided form exp(−|y′|ⁿ) with n = 2 is PSI's part score.
+  Original not read; form from the <code>desire</code> R package source (CRAN archive,
+  https://cran.r-project.org/src/contrib/Archive/desire/, v1.0.7, <code>harrington2</code>).
+- Trautmann &amp; Weihs 2006, <em>Metrika</em> 63(2):207-213 — distribution of the desirability index built from Harrington's
+  functions.
+- Derringer &amp; Suich 1980, <em>Journal of Quality Technology</em> 12:214-219 — the desirability forms in common use
+  (combined by geometric mean). Both as cited in Kuhn, <em>The desirability Package</em> (CRAN vignette, 2016),
+  https://cran.r-project.org/web/packages/desirability/vignettes/desirability.pdf (not peer-reviewed).</p>
+<p><strong>Self-referenced and composite pitcher scores (closest prior art to PSI)</strong>
+- Dillon et al. 2025, <em>OJSM</em>, https://doi.org/10.1177/23259671251389226 — per-pitch distance from the pitcher's
+  own last 4 outings (Statcast); the closest method to PSI's rolling baseline.
+- Ma et al. 2021, <em>Front Psychol</em>, https://doi.org/10.3389/fpsyg.2021.741805 — weighted fatigue index from
+  OpenPose on CPBL video.
+- Mastroianni et al. 2026, <em>AJSM</em>, https://doi.org/10.1177/03635465251411298 — within-pitcher velocity and release
+  trends before UCL injury.
+- Dillon et al. 2026, <em>Sports Biomech</em>, https://doi.org/10.1080/14763141.2026.2638934 — release height vs arm
+  angle (r = 0.74).</p>
+<p><strong>Mechanics measured in PSI</strong>
+- Erickson et al. 2016, <em>Arthroscopy</em>, https://doi.org/10.1016/j.arthro.2015.11.051 — fatigue in adolescents
+  shrinks hip-shoulder separation (basis for hip lead).
+- Solomito et al. 2015, <em>AJSM</em>, https://doi.org/10.1177/0363546515574060 — lateral trunk tilt, velocity and elbow
+  load (side lean).
+- Oyama et al. 2013, 2014, <em>AJSM</em>; Escamilla, Slowik &amp; Fleisig 2023, <em>AJSM</em> — trunk tilt and pitching mechanics.
+- Douoguih et al. 2015, https://pmc.ncbi.nlm.nih.gov/articles/PMC4622343 — early trunk rotation and surgery risk,
+  from centre-field video.
+- Aguinaldo &amp; Chambers 2009, <em>AJSM</em>; Davis et al. 2009, <em>AJSM</em> — mechanics and elbow torque.</p>
+<p><strong>Fatigue, workload and injury (why tracking matters)</strong>
+- Olsen et al. 2006, <em>AJSM</em>, https://doi.org/10.1177/0363546505284188 — pitching while fatigued and surgery risk.
+- Lyman et al. 2001, <em>MSSE</em>; 2002, <em>AJSM</em> — youth pitch counts and arm pain.
+- Fleisig et al. 2011, <em>AJSM</em>, https://doi.org/10.1177/0363546510384224 — 10-year youth injury study.
+- Escamilla et al. 2007, Murray et al. 2001 (<em>AJSM</em>), Grantham et al. 2014 (<em>OJSM</em>) — fatigue kinematics.
+- Mayo 2021, Whiteside 2016, Portney 2019, Chalmers 2016 — velocity and release location before UCL surgery.</p>
+<p><strong>Measuring pitchers from video</strong>
+- Oyama et al. 2017, <em>CJSM</em>, https://pubmed.ncbi.nlm.nih.gov/27753641/ — validity of 2D video trunk tilt.
+- Dobos et al. 2025, <em>Sports Biomech</em>, https://doi.org/10.1080/14763141.2022.2137425 — single-phone markerless
+  pitching vs motion capture.
+- Dunlevy et al. 2005, <em>Physiother Res Int</em>, https://doi.org/10.1002/pri.9 — 2D angle error vs camera rotation.
+- Fleisig et al. 2024, <em>Sports Biomech</em>; Aguinaldo et al. 2026, <em>J Sports Sci</em> — markerless multi-camera
+  validation.
+- Rode et al. 2025, <em>Sci Rep</em>, https://doi.org/10.1038/s41598-025-22626-7 — monocular 3D pose depth error.
+- Bright, Mende &amp; Zelek 2026, arXiv 2603.04864 (preprint) — biomechanics from broadcast video.</p>
+<p><strong>Rules and guidelines</strong>: CTBA 2025 黑豹旗競賽規程 (rule E4.11); MLB / USA Baseball Pitch Smart.</p>
+<h2 id="10-rights-and-attribution">10. Rights and attribution</h2>
+<blockquote>
+<p>Video: game broadcasts and highlights on YouTube from 公視+, CPBL, 統一獅 Uni Lions, 博斯體育台, MOMO SPORTS,
+緯來體育台, 愛爾達體育家族 ELTA Sports and DAZN Taiwan; all rights remain with them (linked, not hosted).
+Data: rebas.tw Open Data (ODC-By); CPBL official site play-by-play. Rules: CTBA 2025 黑豹旗競賽規程.</p>
+</blockquote>
+<p>Software: Apple Vision (macOS), OpenCV, NumPy, pandas, SciPy, scikit-learn, statsmodels, yt-dlp, FFmpeg; site:
+Tailwind CSS, AG Charts Community, Google Fonts. See <code>docs/SOURCES.md</code> §6.</p>
+</article>
+<footer><div>Generated from the project's README. For workload and consistency tracking only. Not a medical assessment.</div></footer>
+</div>
+<script>
+const NAV = [{"title": "PSA · Pitcher Status Analyzer", "href": "../", "current": false}, {"title": "Reports", "href": "../#reports", "current": false}, {"title": "Method", "href": "../method/", "current": false}, {"title": "Demo", "href": "../final_1930_6000/", "current": false}, {"title": "Camera geometry (3D)", "href": "camera/", "current": false}];
+const nav = document.getElementById("games");
+for (const g of NAV) { const a = document.createElement("a"); a.href = g.href; a.textContent = g.title; if (g.current) a.setAttribute("aria-current", "page"); nav.append(a); }
+</script>
+</body>
+</html>

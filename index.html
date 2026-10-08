@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSA · Pitcher Status Analyzer</title>
+<meta name="description" content="Track your pitchers from game video: pitch count, speed and the body at release from one fixed camera. Free and open source, built for school teams.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PSA · Pitcher Status Analyzer">
+<meta property="og:description" content="Track your pitchers from game video: pitch count, speed and the body at release from one fixed camera. Free and open source, built for school teams.">
+<meta property="og:image" content="https://hakexva.github.io/psa-demo/assets/og.jpg">
+<meta property="og:url" content="https://hakexva.github.io/psa-demo/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/psa.css">
+</head>
+<body class="m-0 min-h-screen bg-[#0b1220] font-['Inter','Noto_Sans_TC',sans-serif] text-[#98a4b5] antialiased [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:32px_32px]">
+<div class="mx-auto max-w-5xl px-4 sm:px-6">
+
+  <nav class="flex items-center justify-between gap-4 py-5 text-sm">
+    <a href="./" class="font-semibold text-[#e4e9f0] no-underline">PSA <span class="hidden font-normal text-[#7a8699] sm:inline">· Pitcher Status Analyzer</span></a>
+    <div class="flex gap-4 sm:gap-6"><a class="hidden text-[#98a4b5] no-underline hover:text-[#e4e9f0] sm:inline" href="#reports">Reports</a><a class="hidden text-[#98a4b5] no-underline hover:text-[#e4e9f0] sm:inline" href="#how">How it works</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="#algorithm">Algorithm</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="method/">Method</a><a class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="final_1930_6000/">Demo</a><a lang="zh-Hant-TW" class="text-[#98a4b5] no-underline hover:text-[#e4e9f0]" href="mandarin/">華語</a></div>
+  </nav>
+
+  <header class="grid items-center gap-12 py-14 md:grid-cols-[1fr_1.1fr] md:py-20">
+    <div class="min-w-0">
+      <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#7a8699]">Open source · free data · for school teams</p>
+      <h1 class="mb-0 mt-4 text-4xl font-semibold leading-tight tracking-tight text-[#e4e9f0] sm:text-5xl">Track your pitchers from game video</h1>
+      <p class="mb-0 mt-4 max-w-md text-lg">Pro clubs measure every pitch with stadium systems; most schools count pitches by hand. PSA reads pitch count, speed and the pitcher's body at release from one fixed camera, and flags when a pitcher stops pitching like himself.</p>
+      <div class="mt-8 flex flex-wrap items-center gap-6">
+        <a href="#reports" class="rounded-md bg-[#f2b84b] px-5 py-3 text-sm font-semibold text-[#0b1220] no-underline hover:bg-[#f6ca72]">See live reports</a>
+        <a href="#how" class="text-sm text-[#98a4b5] no-underline hover:text-[#e4e9f0]">How it works →</a>
+      </div>
+    </div>
+    <figure class="m-0 min-w-0 rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><figcaption class="text-sm"><span class="block text-[#e4e9f0]">羅東高工 · 2025 黑豹旗, game by game</span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">pitches · in-game score (100 = second half like the first)</span></figcaption><div class="mt-4 overflow-x-auto"><table class="w-full border-collapse font-['JetBrains_Mono',monospace] text-[11px] text-[#7a8699]"><thead><tr><th></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/10</span><span class="block">64強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/21</span><span class="block">16強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/28</span><span class="block">八強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/29</span><span class="block">四強</span></th><th class="px-1 pb-2 text-center font-normal"><span class="block text-[#c3ccd8]">11/30</span><span class="block">冠軍戰</span></th></tr></thead><tbody><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">郭靖源</th><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">56</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">88</span></div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">36</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">80</span></div></td><td class="p-1"><div class="rounded-lg border border-dashed border-white/15 px-1 py-2 text-center text-[11px] leading-4 text-[#7a8699]">rest<br>rule</div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">33</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">76</span></div></td></tr><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">李鎮宸</th><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">39</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">78</span></div></td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">23</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center ring-2 ring-[#f2b84b]/60"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">46</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">74</span></div></td><td class="p-1"><div class="rounded-lg border border-dashed border-white/15 px-1 py-2 text-center text-[11px] leading-4 text-[#7a8699]">rest<br>rule</div></td></tr><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">林頡廷</th><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">44</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">83</span></div></td><td class="p-1"><div class="rounded-lg border border-dashed border-white/15 px-1 py-2 text-center text-[11px] leading-4 text-[#7a8699]">rest<br>rule</div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">51</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">95</span></div></td></tr><tr><th class="whitespace-nowrap pr-2 text-left font-normal text-[#e4e9f0]">劉澔橙</th><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">12</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">96</span></div></td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1 text-center text-[#3a4558]">·</td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">20</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">83</span></div></td><td class="p-1"><div class="rounded-lg bg-white/[.04] px-1 py-2 text-center"><span class="block font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0]">15</span><span class="mt-1 inline-flex rounded-full px-1.5 font-['JetBrains_Mono',monospace] text-[11px] ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">82</span></div></td></tr></tbody></table></div><p class="mb-0 mt-3 text-xs leading-5 text-[#98a4b5]"><span class="text-[#f2b84b]">●</span> 李鎮宸, 11/29: in-game score 74, timing moved most from his first half to his second.</p></figure>
+  </header>
+
+  <section class="grid grid-cols-2 gap-6 border-0 border-t border-solid border-white/5 pt-8 md:grid-cols-4"><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">Free</b><span class="text-sm text-[#7a8699]">no hardware, no paid data</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">33</b><span class="text-sm text-[#7a8699]">outings scored, pro and high school</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">3,164</b><span class="text-sm text-[#7a8699]">pitches tracked</span></div><div><b class="block font-['JetBrains_Mono',monospace] text-2xl font-medium text-[#e4e9f0]">~5 min</b><span class="text-sm text-[#7a8699]">per highlight video on a Mac</span></div></section>
+
+  <section id="how" class="py-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">How it works</h2>
+    <ol class="mb-0 mt-5 grid list-none gap-3 p-0 sm:grid-cols-2 md:grid-cols-4">
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">01</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Read the scorebug</h3><p class="mb-0 mt-1 text-sm">Batter, count, pitch count, speed.</p></li>
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">02</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Match each pitch</h3><p class="mb-0 mt-1 text-sm">To open play-by-play data.</p></li>
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">03</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Measure the release</h3><p class="mb-0 mt-1 text-sm">Body pose at the release frame, corrected for the camera (<a class="text-[#98a4b5]" href="method/camera/">3D view</a>).</p></li>
+      <li class="rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">04</span><h3 class="mb-0 mt-2 text-base font-medium text-[#e4e9f0]">Score the outing</h3><p class="mb-0 mt-1 text-sm">PSI against his previous three (<a class="text-[#98a4b5]" href="#algorithm">algorithm</a>).</p></li>
+    </ol>
+    <a href="final_1930_6000/" class="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-solid border-[#f2b84b]/40 bg-[#0f1828] p-5 no-underline hover:border-[#f2b84b]"><span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Demo · how the analysis works</span><span class="mt-1 block text-lg font-medium text-[#e4e9f0]">Follow one full game, step by step</span><span class="mt-1 block text-sm text-[#98a4b5]">2025 第十三屆中信盃黑豹旗 冠軍戰 羅東高工 vs 平鎮高中: every pitch from the scorebug, the pitching shots, the release frames and the posture they give.</span></span><span class="text-sm font-medium text-[#f2b84b]">Open the demo →</span></a>
+  </section>
+
+  <section id="algorithm" class="pb-20">
+    <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">The algorithm</p>
+    <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">One score per outing: is he pitching like himself?</h2>
+    <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">PSI (Pitcher Stability Index) compares each outing with his own previous three. 100 means nothing moved. The full method (data, pipeline, baselines, validation, references) is on the <a class="text-[#e4e9f0] underline decoration-white/30 underline-offset-4 hover:decoration-[#f2b84b]" href="method/">Method</a> page.</p>
+    <div class="mt-8 grid gap-4 md:grid-cols-3">
+      <div class="flex flex-col rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <div class="flex items-center gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/[.06] font-['JetBrains_Mono',monospace] text-xs text-[#e4e9f0] ring-1 ring-white/15">1</span><h3 class="m-0 text-base font-medium text-[#e4e9f0]">Measure the change</h3></div>
+        <p class="mb-0 mt-4 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-[15px] text-[#e4e9f0] ring-1 ring-inset ring-white/10">d = |change| ÷ threshold</p>
+        <p class="mb-0 mt-4 text-sm leading-6">For each part, this outing against his previous three. The threshold is the smallest change the measurement can detect at 95%, from pitch-to-pitch scatter and the number of pitches.</p>
+        <p class="mb-0 mt-3 text-sm leading-6">So d counts changes in detectable steps: <span class="text-[#e4e9f0]">d = 1</span> is a change just big enough to be real, whether the part is in km/h, degrees or ms.</p>
+        <div class="mt-auto border-0 border-t border-solid border-white/5 pt-4"><button type="button" class="group flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0] aria-expanded:text-[#e4e9f0]" aria-expanded="false" aria-controls="ex-1" data-ex="1"><svg viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Example</button></div>
+      </div>
+      <div class="flex flex-col rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <div class="flex items-center gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/[.06] font-['JetBrains_Mono',monospace] text-xs text-[#e4e9f0] ring-1 ring-white/15">2</span><h3 class="m-0 text-base font-medium text-[#e4e9f0]">Score each part</h3></div>
+        <p class="mb-0 mt-4 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-[15px] text-[#e4e9f0] ring-1 ring-inset ring-white/10">score = 100 · e<sup>−d²/4</sup></p>
+        <p class="mb-0 mt-4 text-sm leading-6"><span class="text-[#e4e9f0]">e ≈ 2.718</span>, the base of natural growth and decay. A bell curve, the shape of the normal distribution.</p>
+        <svg viewBox="0 0 400 190" class="mt-4 block w-full" role="img" aria-label="Part score against d: 78 at d = 1, 37 at d = 2">
+          <g stroke="#1f2a3d" stroke-width="1"><line x1="40" y1="16" x2="380" y2="16"></line><line x1="40" y1="91" x2="380" y2="91"></line><line x1="40" y1="166" x2="380" y2="166"></line></g>
+          <g font-family="JetBrains Mono, monospace" font-size="12" fill="#7a8699"><text x="32" y="20" text-anchor="end">100</text><text x="32" y="95" text-anchor="end">50</text><text x="32" y="170" text-anchor="end">0</text>
+            <text x="40" y="184" text-anchor="middle">0</text><text x="150" y="184" text-anchor="middle">1</text><text x="260" y="184" text-anchor="middle">2</text><text x="370" y="184" text-anchor="middle">d = 3</text></g>
+          <polyline points="40.0,16.0 45.5,16.1 51.0,16.4 56.5,16.8 62.0,17.5 67.5,18.3 73.0,19.3 78.5,20.5 84.0,21.9 89.5,23.4 95.0,25.1 100.5,26.9 106.0,28.9 111.5,31.0 117.0,33.3 122.5,35.7 128.0,38.2 133.5,40.8 139.0,43.5 144.5,46.3 150.0,49.2 155.5,52.1 161.0,55.2 166.5,58.2 172.0,61.3 177.5,64.5 183.0,67.7 188.5,70.9 194.0,74.1 199.5,77.3 205.0,80.5 210.5,83.7 216.0,86.9 221.5,90.1 227.0,93.2 232.5,96.2 238.0,99.3 243.5,102.2 249.0,105.2 254.5,108.0 260.0,110.8 265.5,113.5 271.0,116.2 276.5,118.8 282.0,121.3 287.5,123.7 293.0,126.0 298.5,128.3 304.0,130.5 309.5,132.6 315.0,134.6 320.5,136.5 326.0,138.3 331.5,140.1 337.0,141.8 342.5,143.4 348.0,144.9 353.5,146.3 359.0,147.7 364.5,149.0 370.0,150.2" fill="none" stroke="#6f9ee8" stroke-width="2.5"></polyline>
+          <circle cx="150" cy="49.2" r="5" fill="#6f9ee8" stroke="#0b1220" stroke-width="2"></circle><text x="160" y="44" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">78 at the threshold</text>
+          <circle cx="260" cy="110.8" r="5" fill="#f2b84b" stroke="#0b1220" stroke-width="2"></circle><text x="270" y="106" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">37 at twice it</text>
+        </svg>
+        <div class="mt-auto border-0 border-t border-solid border-white/5 pt-4"><button type="button" class="group flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0] aria-expanded:text-[#e4e9f0]" aria-expanded="false" aria-controls="ex-2" data-ex="2"><svg viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Example</button></div>
+      </div>
+      <div class="flex flex-col rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <div class="flex items-center gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/[.06] font-['JetBrains_Mono',monospace] text-xs text-[#e4e9f0] ring-1 ring-white/15">3</span><h3 class="m-0 text-base font-medium text-[#e4e9f0]">Combine into PSI</h3></div>
+        <p class="mb-0 mt-4 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-[15px] text-[#e4e9f0] ring-1 ring-inset ring-white/10">PSI = ½ results<br><span class="invisible">PSI </span>+ ½ mechanics</p>
+        <p class="mb-0 mt-4 text-sm leading-6">Each half is the average of its parts. If a half cannot be measured for an outing, PSI is the other half.</p>
+        <div class="mt-4 grid gap-2.5 text-sm">
+          <div class="flex items-center justify-between gap-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">80+</span><span>steady, like his previous outings</span></div>
+          <div class="flex items-center justify-between gap-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">60–79</span><span>worth a look</span></div>
+          <div class="flex items-center justify-between gap-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">below 60</span><span>flagged: something moved</span></div>
+        </div>
+        <div class="mt-auto border-0 border-t border-solid border-white/5 pt-4"><button type="button" class="group flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0] aria-expanded:text-[#e4e9f0]" aria-expanded="false" aria-controls="ex-3" data-ex="3"><svg viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Example</button></div>
+      </div>
+    </div>
+    <div id="examples" class="mt-4 rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10" hidden>
+      <div id="ex-1" class="ex-panel" hidden>
+        <div class="flex items-center justify-between gap-3"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">Example · 1 · Measure the change</span><button type="button" class="cursor-pointer border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0]" data-close>close ×</button></div>
+        <div class="mt-1 max-w-2xl">
+          <p class="mb-0 mt-3 text-sm leading-6">胡智為, 2025-09-26: his fastball averaged 0.7 km/h below his previous three outings. With 47 fastballs the smallest detectable change was about 0.53 km/h.</p>
+          <p class="mb-0 mt-3 rounded-lg bg-[#0a101f] px-4 py-3 font-['JetBrains_Mono',monospace] text-sm text-[#e4e9f0] ring-1 ring-inset ring-white/10">d = 0.7 ÷ 0.53 = 1.31</p>
+          <p class="mb-0 mt-3 text-sm leading-6">A change 1.31 times the size noise could produce. Step 2 turns it into a score.</p>
+        </div>
+      </div>
+      <div id="ex-2" class="ex-panel" hidden>
+        <div class="flex items-center justify-between gap-3"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">Example · 2 · Score each part</span><button type="button" class="cursor-pointer border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0]" data-close>close ×</button></div>
+        <div class="mt-1 max-w-2xl">
+          <p class="mb-0 mt-3 text-sm leading-6">胡智為's fastball, each outing against his previous three (only drops count). More fastballs shrink the threshold, so 0.7 km/h over 47 pitches (9/26) outweighs 1.1 km/h over 6 (5/24).</p>
+          <div class="mt-3 overflow-x-auto"><table class="w-full border-collapse text-left text-xs [font-variant-numeric:tabular-nums]">
+            <thead class="font-['JetBrains_Mono',monospace] text-[#7a8699]"><tr><th class="py-2 pr-2 font-normal">Outing</th><th class="py-2 pr-2 font-normal">Drop</th><th class="py-2 pr-2 font-normal">FB</th><th class="py-2 pr-2 font-normal">Thr.</th><th class="py-2 pr-2 font-normal">d</th><th class="py-2 text-right font-normal">Score</th></tr></thead>
+            <tbody>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">9/26 '25</td><td class="py-2 pr-2">0.7</td><td class="py-2 pr-2">47</td><td class="py-2 pr-2">≈0.5</td><td class="py-2 pr-2 text-[#e4e9f0]">1.31</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">65</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">4/06 '26</td><td class="py-2 pr-2">2.6</td><td class="py-2 pr-2">6</td><td class="py-2 pr-2">≈1.3</td><td class="py-2 pr-2 text-[#e4e9f0]">1.99</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">37</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">5/12 '26</td><td class="py-2 pr-2">0.4</td><td class="py-2 pr-2">10</td><td class="py-2 pr-2">≈1.1</td><td class="py-2 pr-2 text-[#e4e9f0]">0.35</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">97</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="whitespace-nowrap py-2 pr-2">5/24 '26</td><td class="py-2 pr-2">1.1</td><td class="py-2 pr-2">6</td><td class="py-2 pr-2">≈1.1</td><td class="py-2 pr-2 text-[#e4e9f0]">1.00</td><td class="py-2 text-right"><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">78</span></td></tr>
+            </tbody></table></div>
+          <p class="mb-0 mt-2 text-xs text-[#7a8699]">Drop and threshold (Thr.) in km/h · FB = fastballs</p>
+        </div>
+      </div>
+      <div id="ex-3" class="ex-panel" hidden>
+        <div class="flex items-center justify-between gap-3"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">Example · 3 · Combine into PSI</span><button type="button" class="cursor-pointer border-0 bg-transparent p-0 font-['JetBrains_Mono',monospace] text-xs text-[#98a4b5] hover:text-[#e4e9f0]" data-close>close ×</button></div>
+        <div class="mt-1 max-w-2xl">
+          <p class="mb-0 mt-3 text-sm leading-6">胡智為, 2025-08-08, his first start back from relief.</p>
+          <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+<div class="rounded-xl bg-[#0a101f] p-4 ring-1 ring-inset ring-white/10"><div class="flex items-center justify-between gap-3"><span class="text-[#e4e9f0]">Results <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></span></div><div class="mt-3 grid gap-2">
+<div class="flex items-center justify-between gap-3"><span>velocity <span class="text-[#7a8699]">+3.5 km/h, a rise</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div>
+<div class="flex items-center justify-between gap-3"><span>command <span class="text-[#7a8699]">+5.5% strikes</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div>
+</div><div class="mt-3 flex items-center justify-between gap-3 border-0 border-t border-solid border-white/10 pt-3"><span class="text-[#e4e9f0]">average <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">(100 + 100) ÷ 2</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">100</span></div></div>
+<div class="rounded-xl bg-[#0a101f] p-4 ring-1 ring-inset ring-white/10"><div class="flex items-center justify-between gap-3"><span class="text-[#e4e9f0]">Mechanics <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></span></div><div class="mt-3 grid gap-2">
+<div class="flex items-center justify-between gap-3"><span>posture <span class="text-[#7a8699]">side lean +4.8°</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">55</span></div>
+<div class="flex items-center justify-between gap-3"><span>timing <span class="text-[#7a8699]">shoulders open +22 ms</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#f2b84b]/10 text-[#f2b84b] ring-[#f2b84b]/25">59</span></div>
+<div class="flex items-center justify-between gap-3"><span>consistency <span class="text-[#7a8699]">spread ×1.9</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">82</span></div>
+</div><div class="mt-3 flex items-center justify-between gap-3 border-0 border-t border-solid border-white/10 pt-3"><span class="text-[#e4e9f0]">average <span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">(55 + 59 + 82) ÷ 3</span></span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-white/5 text-[#c3ccd8] ring-white/15">65</span></div></div>
+</div>
+<div class="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm ring-1 ring-inset ring-white/10"><span class="font-['JetBrains_Mono',monospace] text-[#e4e9f0]">PSI = ½ · 100 + ½ · 65</span><span class="inline-flex items-center rounded-full px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs ring-1 ring-inset bg-[#6f9ee8]/10 text-[#9dbcf0] ring-[#6f9ee8]/25">83</span></div>
+          <p class="mb-0 mt-3 text-sm leading-6">Steady overall, yet two parts are below 60: his delivery changed while his results held (0 earned runs). An average can hide one moved part, so read the parts too.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mt-12 border-0 border-t border-solid border-white/5 pt-8">
+      <h3 class="m-0 text-sm font-medium text-[#e4e9f0]">Why this curve</h3>
+      <div class="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">01</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">One scale</h3><p class="mb-0 mt-1 text-sm">Dividing by the threshold removes units, so speed, angles and timing can be averaged.</p></div>
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">02</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">Flat near zero</h3><p class="mb-0 mt-1 text-sm">Changes inside the noise cost almost nothing: half a threshold still scores 94.</p></div>
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">03</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">No cliff</h3><p class="mb-0 mt-1 text-sm">A pass/fail rule would call d = 0.99 and 1.01 opposites. The curve falls smoothly, faster for bigger changes.</p></div>
+        <div><span class="font-['JetBrains_Mono',monospace] text-xs text-[#f2b84b]">04</span><h3 class="mb-0 mt-2 text-sm font-medium text-[#e4e9f0]">The 4 sets the bands</h3><p class="mb-0 mt-1 text-sm">At the threshold a part scores 78, just short of steady. Below 60 needs d ≥ 1.43, which noise alone reaches about 0.5% of the time.</p></div>
+      </div>
+      <p class="mb-0 mt-6 max-w-3xl text-xs leading-5 text-[#7a8699]">e itself is a fixed constant, not a tuned value. The formula was chosen for this project, and it turns out to be a special case of an established one: Harrington's two-sided desirability function from quality engineering (1965), <code class="rounded bg-white/5 px-1.5 py-0.5 font-['JetBrains_Mono',monospace] text-[11px] text-[#c3ccd8]">exp(−|y′|ⁿ)</code>, with n = 2 and its limits at twice the threshold, where both give 1/e ≈ 37. The curve and the 4 are not fitted to outcomes; the threshold underneath is what has to be right (see <a class="text-[#98a4b5] underline decoration-white/30 underline-offset-4 hover:text-[#e4e9f0] hover:decoration-[#f2b84b]" href="method/#6-validation-so-far">Method · Validation</a>).</p>
+    </div>
+    <div class="mt-12 overflow-x-auto rounded-2xl bg-[#0f1828] ring-1 ring-inset ring-white/10">
+      <table class="w-full min-w-[36rem] border-collapse text-left text-sm">
+        <thead class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]"><tr><th class="px-5 py-3 font-normal">Half</th><th class="px-5 py-3 font-normal">Part</th><th class="px-5 py-3 font-normal">What is measured</th><th class="px-5 py-3 font-normal">Counts</th></tr></thead>
+        <tbody>
+<tr class="border-0 border-t border-solid border-white/10"><td class="px-5 py-3 align-top" rowspan="2"><span class="block text-[#e4e9f0]">Results</span><span class="mt-0.5 block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></td><td class="px-5 py-3 text-[#e4e9f0]">Velocity</td><td class="px-5 py-3">Fastball speed (mean km/h)</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">drops only</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Command</td><td class="px-5 py-3">Strike rate</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">drops only</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/10"><td class="px-5 py-3 align-top" rowspan="3"><span class="block text-[#e4e9f0]">Mechanics</span><span class="mt-0.5 block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">50%</span></td><td class="px-5 py-3 text-[#e4e9f0]">Posture</td><td class="px-5 py-3">Side and forward lean, shoulder and hip lines, arm slot, release point at the release frame</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">either way</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Timing</td><td class="px-5 py-3">Hip lead and shoulder opening before release (ms)</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">either way</span></td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Consistency</td><td class="px-5 py-3">Spread of the release point</td><td class="whitespace-nowrap px-5 py-3"><span class="rounded-md bg-white/5 px-2 py-0.5 font-['JetBrains_Mono',monospace] text-xs text-[#c3ccd8]">wider only</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-12">
+      <h3 class="m-0 text-base font-medium text-[#e4e9f0]">Two scores, never mixed</h3>
+      <p class="mb-0 mt-2 max-w-2xl text-sm leading-6">Inside one game there is no day-to-day variation, so the in-game score can use a tight threshold. Between games the threshold must also allow for normal game-to-game variation.</p>
+      <div class="mt-5 overflow-x-auto rounded-2xl bg-[#0f1828] ring-1 ring-inset ring-white/10">
+      <table class="w-full min-w-[36rem] border-collapse text-left text-sm">
+        <thead class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]"><tr><th class="px-5 py-3 font-normal"></th><th class="px-5 py-3 font-normal">In-game score</th><th class="px-5 py-3 font-normal">PSI, between games</th></tr></thead>
+        <tbody>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Compares</td><td class="px-5 py-3">his second half with his first half</td><td class="px-5 py-3">this outing with his previous three</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Threshold</td><td class="px-5 py-3">pitch sampling only</td><td class="px-5 py-3">sampling plus normal game-to-game variation</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Null test</td><td class="px-5 py-3">random halves of one game</td><td class="px-5 py-3">game order shuffled within a season</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">League check</td><td class="px-5 py-3">0% of random halves flagged; a second-half velocity drop in 21% of starts</td><td class="px-5 py-3">56% of outings crossed a &ldquo;95%&rdquo; threshold: being widened</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="mb-0 mt-3 text-xs text-[#7a8699]">League check: every CPBL outing 2023–2025 in Rebas Open Data, 1,563 starts and 2,798 relief outings.</p>
+    </div>
+  </section>
+
+  <section id="status" class="pb-20">
+    <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">Where it stands</p>
+    <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">The measurement holds. The prediction is not proven yet.</h2>
+    <div class="mt-8 grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <h3 class="m-0 text-base font-medium text-[#e4e9f0]">What holds</h3>
+        <ul class="mb-0 mt-4 space-y-3 pl-5 text-sm leading-6">
+          <li><span class="text-[#e4e9f0]">99%</span> of 228 hand-labeled releases found within ±2 frames</li>
+          <li><span class="text-[#e4e9f0]">1.4°</span> median side-lean difference for the same pitch in two broadcast cuts</li>
+          <li><span class="text-[#e4e9f0]">0.1–0.5°</span> camera direction agreement between cuts of one feed</li>
+          <li><span class="text-[#e4e9f0]">0%</span> of same-game random halves flagged: noise is not read as change</li>
+        </ul>
+      </div>
+      <div class="rounded-2xl bg-[#0f1828] p-6 ring-1 ring-inset ring-white/10">
+        <h3 class="m-0 text-base font-medium text-[#e4e9f0]">What we can't claim yet</h3>
+        <ul class="mb-0 mt-4 space-y-3 pl-5 text-sm leading-6">
+          <li>A low results score did not predict the next start, across 1,563 CPBL starts (<span class="text-[#e4e9f0]">ρ = −0.02</span>).</li>
+          <li>Between-game thresholds are too tight: fastball speed moves ±2 km/h between outings (SD 1.94), not 0.78 as sampling alone predicts.</li>
+          <li>With field landmarks on all 40 known-change videos, the mechanics half still reaches only 3 of 14 event outings: highlights barely show relievers. Full games are needed.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="mb-0 mt-4 max-w-2xl text-sm leading-6">Next: widen every between-game threshold by the measured game-to-game variation and rerun the league test, score full games from the high-school tournaments, build the practice mode, and ask coaches which flags matter. Details on the <a class="text-[#e4e9f0] underline decoration-white/30 underline-offset-4 hover:decoration-[#f2b84b]" href="method/#6-validation-so-far">Method</a> page.</p>
+  </section>
+
+  <section id="reports" class="pb-16">
+    <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">Live reports</h2>
+    <div class="mt-5 grid gap-3 md:grid-cols-2"><a href="pitchers/" class="rounded-2xl bg-[#0f1828] p-5 no-underline ring-1 ring-inset ring-white/10 transition hover:bg-[#132036] hover:ring-white/20"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Tournament · high school</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">2025 黑豹旗 · 羅東高工、平鎮高中</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">8 pitchers across 10 games: pitch counts against the rest rules, velocity, posture, in-game score.</p></a><a href="hu/" class="rounded-2xl bg-[#0f1828] p-5 no-underline ring-1 ring-inset ring-white/10 transition hover:bg-[#132036] hover:ring-white/20"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Season · CPBL</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">胡智為 · 2025–2026</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">16 starts and 4 relief outings, 310 pitches, hand-checked.</p></a><a href="cpbl2024g4_0000_6000/" class="rounded-2xl bg-[#0f1828] p-5 no-underline ring-1 ring-inset ring-white/10 transition hover:bg-[#132036] hover:ring-white/20"><span class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">Single game</span><h3 class="mb-0 mt-2 text-lg font-medium text-[#e4e9f0]">2024 中華職棒二軍總冠軍賽 G4 味全龍二軍 vs 統一獅二軍</h3><p class="mb-0 mt-1 text-sm text-[#98a4b5]">Every pitch of one broadcast: pitch count, velocity, release posture.</p></a></div>
+  </section>
+
+
+  <section id="pro" class="grid items-center gap-10 border-0 border-t border-solid border-white/5 py-16 md:grid-cols-[1fr_1.1fr]">
+    <div class="min-w-0">
+      <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">Also at pro level</p>
+      <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">The same pipeline runs on CPBL video</h2>
+      <p class="mb-0 mt-3 text-sm leading-6">Built for schools, the core is a toolkit for any level. On CPBL highlights matched to Rebas Open Data it follows one pitcher's season, and the league check above covers every CPBL outing from 2023 to 2025.</p>
+    </div>
+    <figure class="m-0 rounded-2xl bg-[#0f1828] p-5 ring-1 ring-inset ring-white/10"><figcaption class="text-sm"><span class="block text-[#e4e9f0]">胡智為 · PSI by outing, 2025–2026</span><span class="block font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]">100 = pitching like his previous 3 outings</span></figcaption><svg viewBox="0 0 420 240" class="mt-3 block w-full" role="img" aria-label="PSI by outing; lowest 5/24, 58"><g stroke="#1f2a3d" stroke-width="1"><line x1="30" y1="20.0" x2="410" y2="20.0"></line><line x1="30" y1="110.0" x2="410" y2="110.0"></line><line x1="30" y1="200.0" x2="410" y2="200.0"></line></g><g font-family="JetBrains Mono, monospace" font-size="11" fill="#7a8699"><text x="24" y="24.0" text-anchor="end">100</text><text x="24" y="114.0" text-anchor="end">50</text><text x="24" y="204.0" text-anchor="end">0</text></g><polyline points="40.0,59.6 60.0,47.0 80.0,34.4 100.0,50.6 120.0,34.4 140.0,32.6 160.0,38.0 180.0,32.6 200.0,43.4 220.0,61.4 240.0,29.0 260.0,20.0 280.0,23.6 300.0,95.6 320.0,54.2 340.0,23.6 360.0,32.6 380.0,23.6 400.0,32.6" fill="none" stroke="#6f9ee8" stroke-width="2"></polyline><g fill="#6f9ee8" stroke="#0f1828" stroke-width="2"><circle cx="40.0" cy="59.6" r="4.5"></circle><circle cx="60.0" cy="47.0" r="4.5"></circle><circle cx="80.0" cy="34.4" r="4.5"></circle><circle cx="100.0" cy="50.6" r="4.5"></circle><circle cx="120.0" cy="34.4" r="4.5"></circle><circle cx="140.0" cy="32.6" r="4.5"></circle><circle cx="160.0" cy="38.0" r="4.5"></circle><circle cx="180.0" cy="32.6" r="4.5"></circle><circle cx="200.0" cy="43.4" r="4.5"></circle><circle cx="220.0" cy="61.4" r="4.5"></circle><circle cx="240.0" cy="29.0" r="4.5"></circle><circle cx="260.0" cy="20.0" r="4.5"></circle><circle cx="280.0" cy="23.6" r="4.5"></circle><circle cx="320.0" cy="54.2" r="4.5"></circle><circle cx="340.0" cy="23.6" r="4.5"></circle><circle cx="360.0" cy="32.6" r="4.5"></circle><circle cx="380.0" cy="23.6" r="4.5"></circle><circle cx="400.0" cy="32.6" r="4.5"></circle></g><circle cx="300.0" cy="95.6" r="6" fill="#f2b84b" stroke="#0f1828" stroke-width="2"></circle><text x="289.0" y="113.6" text-anchor="end" font-family="Inter, sans-serif" font-size="12" fill="#e4e9f0">5/24 · 58</text><g font-family="JetBrains Mono, monospace" font-size="10" fill="#7a8699" text-anchor="middle"><text x="40.0" y="222">4/9</text><text x="100.0" y="222">8/8</text><text x="160.0" y="222">9/9</text><text x="220.0" y="222">4/6</text><text x="280.0" y="222">5/12</text><text x="340.0" y="222">8/1</text><text x="400.0" y="222">8/23</text></g></svg></figure>
+  </section>
+
+  <section id="practice" class="border-0 border-t border-solid border-white/5 py-16">
+    <p class="m-0 font-['JetBrains_Mono',monospace] text-xs tracking-wider text-[#f2b84b]">Coming later</p>
+    <h2 class="mb-0 mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-[#e4e9f0] sm:text-3xl">Practice mode: check a pitcher between games</h2>
+    <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">A phone on a tripod behind the mound during live ABs takes the same view as the center-field camera, from 15–25 m instead of 100 m. One pitcher per session, pitch count from the video; balls, strikes and radar readings optional.</p>
+    <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">Each session is compared with his own earlier sessions, never with games.</p>
+    <p class="mb-0 mt-3 text-xs text-[#7a8699]">Planned: not built or tested yet.</p>
+  </section>
+
+  <section class="grid gap-8 border-0 border-t border-solid border-white/5 py-12 sm:grid-cols-2">
+    <div>
+      <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">What you need</h2>
+      <ul class="mb-0 mt-3 space-y-2 pl-5 text-sm leading-6"><li>Game video from one fixed camera behind center field, such as a free tournament stream</li><li>A Mac (Apple Vision, included with macOS)</li><li>Pitch-by-pitch data when it exists; otherwise the scorebug</li></ul>
+    </div>
+    <div>
+      <h2 class="m-0 text-sm font-medium text-[#e4e9f0]">Limits</h2>
+      <ul class="mb-0 mt-3 space-y-2 pl-5 text-sm leading-6"><li>The camera angle must match from game to game, or field landmarks must be labeled to correct it</li><li>Highlights show 10–25 pitches per start; full games show all of them</li><li>The score flags change, not quality</li><li>Not a medical assessment</li></ul>
+    </div>
+  </section>
+
+  <footer class="border-0 border-t border-solid border-white/5 py-6 text-xs leading-relaxed text-[#7a8699]">Video: public broadcasts and highlights on YouTube, linked to the original; rights remain with their owners. Data: Rebas Open Data (ODC-By), CPBL play-by-play. Built for the 2026 Rebas Baseball Data Hackathon.</footer>
+</div>
+<script>
+// Algorithm examples: one open at a time, in a full-width panel under the cards, so the cards never change height.
+(() => {
+  const box = document.getElementById("examples");
+  const buttons = [...document.querySelectorAll("[data-ex]")];
+  function show(n) {
+    for (const b of buttons) b.setAttribute("aria-expanded", String(b.dataset.ex === n));
+    for (const p of box.querySelectorAll(".ex-panel")) p.hidden = p.id !== `ex-${n}`;
+    box.hidden = !n;
+  }
+  for (const b of buttons) b.addEventListener("click", () => show(b.getAttribute("aria-expanded") === "true" ? "" : b.dataset.ex));
+  box.addEventListener("click", e => { if (e.target.closest("[data-close]")) show(""); });
+})();
+</script>
+</body>
+</html>

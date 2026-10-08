@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSA · Camera geometry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root { color-scheme: dark; --bg: #0b1220; --panel: #121b2c; --line: #24304a; --ink: #e4e9f0; --ink2: #98a4b5; --muted: #7a8699;
+          --accent: #f2b84b; --blue: #6f9ee8; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 Inter, system-ui, sans-serif; }
+  a { color: var(--ink2); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
+  nav { display: flex; gap: 20px; font-size: 14px; }
+  nav a { text-decoration: none; } nav a:hover { color: var(--ink); }
+  h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  .lede { margin: 0; color: var(--ink2); max-width: 75ch; }
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; }
+  @media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+  .stage { position: relative; height: min(72vh, 680px); min-height: 420px; background: #0a101f; border: 1px solid var(--line);
+           border-radius: 14px; overflow: hidden; }
+  .stage canvas { display: block; }
+  .views { position: absolute; left: 12px; top: 12px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 2; }
+  .views button { background: rgba(18,27,44,.92); color: var(--ink2); border: 1px solid var(--line); border-radius: 999px;
+                  padding: 5px 12px; font: 13px Inter, system-ui, sans-serif; cursor: pointer; }
+  .views button[aria-pressed="true"] { color: #0b1220; background: var(--accent); border-color: var(--accent); }
+  .hint { position: absolute; right: 12px; bottom: 10px; font-size: 12px; color: var(--muted); z-index: 2; }
+  .lbl { font: 12px/1.3 Inter, system-ui, sans-serif; color: var(--ink); background: rgba(11,18,32,.82); border: 1px solid var(--line);
+         border-radius: 6px; padding: 3px 7px; white-space: nowrap; pointer-events: none; }
+  .lbl.amber { border-color: #6b5420; color: var(--accent); } .lbl.blue { border-color: #2e4878; color: #9dbcf0; }
+  aside { display: grid; gap: 12px; align-content: start; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; }
+  .step h2 { margin: 0; font-size: 15px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+  .step h2 span { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 12px "JetBrains Mono", monospace;
+                  border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.05); }
+  .step p { margin: 0; color: var(--ink2); font-size: 14px; }
+  code { font: 12.5px/1.5 "JetBrains Mono", ui-monospace, monospace; color: var(--ink); background: #0a101f; border: 1px solid var(--line);
+         border-radius: 6px; padding: 6px 8px; display: block; white-space: pre-wrap; }
+  .key { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--ink2); }
+  .key i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  footer { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a href="../../">PSA · Pitcher Status Analyzer</a><a href="../">Method</a><a href="../#camera-geometry-in-detail">Camera geometry, in text</a></nav>
+  <h1>Camera geometry, to scale</h1>
+  <p class="lede">One broadcast camera, solved from 13 field landmarks, then used to read the pitcher's body on a plane as if from straight behind. Real numbers: the centre-field camera of 2025-08-26 (統一獅 home broadcast), 390.5 ft from the plate, 25.6 ft toward third base, 20.8 ft up, with a lens so long it sees about 2.5° of the scene.</p>
+  <div class="main">
+    <div class="stage" id="stage">
+      <div class="views" id="views" role="group" aria-label="Views">
+        <button data-view="overview">Overview</button>
+        <button data-view="landmarks" aria-pressed="true">1 · Landmarks</button>
+        <button data-view="solve">2 · Camera rays</button>
+        <button data-view="plane">3 · Release plane</button>
+        <button data-view="camera">Camera's view</button>
+      </div>
+      <div class="hint">Drag to turn · scroll to zoom</div>
+    </div>
+    <aside>
+      <div class="step"><h2><span>1</span>Click 13 landmarks</h2>
+        <p>On one frame per video: 8 batter's-box corners, 3 plate points, 2 rubber ends. The rules fix where they are on the field.</p>
+        <code>boxes 4 × 6 ft · plate 17 in
+rubber 60 ft 6 in out, 10 in up</code></div>
+      <div class="step"><h2><span>2</span>Solve the camera</h2>
+        <p>Find the camera whose rays pass through every landmark's click: focal length, rotation and position, by least squares on the pixel error. A weak pull keeps it near 400 ft out.</p>
+        <code>u = K (R X + t)
+minimise Σ ‖project(Xᵢ) − clickᵢ‖²
+       + (3 · (dist − 400 ft) / 40 ft)²</code></div>
+      <div class="step"><h2><span>3</span>Read the body on the release plane</h2>
+        <p>Trace each body keypoint back along its camera ray to the vertical plane 3 ft in front of the rubber, then read the angles there, the same way in every stadium.</p>
+        <code>d = Rᵀ K⁻¹ (u, v, 1),  C = −Rᵀ t
+X = C + s·d   with  X.y = 690 in
+side lean = atan2(|Δx|, Δup)  hips → shoulders</code></div>
+      <div class="key"><span><i style="background:#f2b84b"></i>landmarks and their rays</span><span><i style="background:#6f9ee8"></i>body points and their rays</span></div>
+    </aside>
+  </div>
+  <footer>Drawn with three.js. Field dimensions from the official rules; camera from <code style="display:inline;padding:1px 5px">psa-landmarks --solve</code> on the 2025-08-26 video. Distances are true to scale, in feet.</footer>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+// World: feet. three.js axes: X = toward third base (right as seen from centre field), Y = up, Z = from the plate toward the pitcher.
+const IN = 1 / 12;
+const CAM = new THREE.Vector3(25.6, 20.8, 390.5);           // solved camera, 2025-08-26
+const VFOV = 2 * Math.atan(540 / 24830) * 180 / Math.PI;    // focal 24,830 px on a 1080-px frame -> ~2.5 deg
+const PLANE_Z = 690 * IN, MOUND_H = 10 * IN;
+const AMBER = 0xf2b84b, BLUE = 0x6f9ee8, CHALK = 0xe4e9f0;
+
+const stage = document.getElementById("stage");
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a101f);
+const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); stage.append(renderer.domElement);
+const labels = new CSS2DRenderer(); labels.domElement.style.position = "absolute"; labels.domElement.style.top = "0"; labels.domElement.style.pointerEvents = "none"; stage.append(labels.domElement);
+const view = new THREE.PerspectiveCamera(40, 1, 0.5, 2000);  // near 0.5 ft keeps depth precise across a 400-ft scene
+const controls = new OrbitControls(view, renderer.domElement); controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1d3a24, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-80, 160, 120); scene.add(sun);
+
+const P = (x, up, z) => new THREE.Vector3(x, up, z);
+function line(points, color, opacity = 1, width = 1) {
+  const g = new THREE.BufferGeometry().setFromPoints(points);
+  return new THREE.Line(g, new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity, linewidth: width }));
+}
+function dot(p, color, r = 0.14) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), new THREE.MeshBasicMaterial({ color })); m.position.copy(p); return m;
+}
+function label(text, p, cls = "") {
+  const d = document.createElement("div"); d.className = "lbl " + cls; d.textContent = text;
+  const o = new CSS2DObject(d); o.position.copy(p); return o;
+}
+const groups = { field: new THREE.Group(), landmarks: new THREE.Group(), lmRays: new THREE.Group(), camera: new THREE.Group(),
+                 plane: new THREE.Group(), bodyRays: new THREE.Group() };
+Object.values(groups).forEach(g => scene.add(g));
+
+// Field: grass, infield dirt, raised mound with the rubber, plate, batter's boxes.
+const grass = new THREE.Mesh(new THREE.CircleGeometry(430, 96), new THREE.MeshLambertMaterial({ color: 0x24563a }));
+grass.rotation.x = -Math.PI / 2; grass.position.set(0, -0.3, 180); groups.field.add(grass);
+const dirt = new THREE.Mesh(new THREE.CircleGeometry(95, 96), new THREE.MeshLambertMaterial({ color: 0x8a6a48 }));
+dirt.rotation.x = -Math.PI / 2; dirt.position.set(0, -0.15, 60.5); groups.field.add(dirt);
+const homeDirt = new THREE.Mesh(new THREE.CircleGeometry(13, 64), new THREE.MeshLambertMaterial({ color: 0x8a6a48 }));
+homeDirt.rotation.x = -Math.PI / 2; homeDirt.position.set(0, -0.08, 0); groups.field.add(homeDirt);
+const mound = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, MOUND_H, 64), new THREE.MeshLambertMaterial({ color: 0x9b7853 }));
+mound.position.set(0, MOUND_H / 2, 59); groups.field.add(mound);
+const rubber = new THREE.Mesh(new THREE.BoxGeometry(24 * IN, 0.05, 6 * IN), new THREE.MeshLambertMaterial({ color: 0xf4f4f0 }));
+rubber.position.set(0, MOUND_H + 0.03, 726 * IN + 3 * IN); groups.field.add(rubber);
+const plateShape = new THREE.Shape([[-8.5, 17], [8.5, 17], [8.5, 8.5], [0, 0], [-8.5, 8.5]].map(([x, y]) => new THREE.Vector2(x * IN, y * IN)));
+const plate = new THREE.Mesh(new THREE.ShapeGeometry(plateShape), new THREE.MeshBasicMaterial({ color: 0xf4f4f0, side: THREE.DoubleSide }));
+plate.rotation.x = Math.PI / 2; plate.position.y = 0.02; groups.field.add(plate);
+const yF = 44.5 * IN, yB = -27.5 * IN;
+for (const s of [-1, 1]) {
+  const xi = s * 14.5 * IN, xo = s * 62.5 * IN;
+  groups.field.add(line([P(xi, 0.03, yF), P(xo, 0.03, yF), P(xo, 0.03, yB), P(xi, 0.03, yB), P(xi, 0.03, yF)], CHALK));
+}
+
+// The 13 landmarks (positions from the rules).
+const LM = [];
+for (const s of [-1, 1]) for (const x of [14.5, 62.5]) for (const y of [44.5, -27.5]) LM.push(P(s * x * IN, 0, y * IN));
+LM.push(P(-8.5 * IN, 0, 17 * IN), P(8.5 * IN, 0, 17 * IN), P(0, 0, 0));
+LM.push(P(-12 * IN, MOUND_H, 726 * IN), P(12 * IN, MOUND_H, 726 * IN));
+for (const p of LM) { groups.landmarks.add(dot(p, AMBER, 0.12)); groups.lmRays.add(line([CAM, p], AMBER, 0.35)); }
+groups.landmarks.add(label("Batter's boxes · 8 corners", P(-4.4, 0.6, -2.4), "amber"));
+groups.landmarks.add(label("Plate · 3 points", P(0, 0.9, 0.6), "amber"));
+groups.landmarks.add(label("Rubber · 60 ft 6 in out, 10 in up", P(0, 1.7, 60.5), "amber"));
+
+// The camera: a small body plus its viewing direction.
+const camBody = new THREE.Mesh(new THREE.BoxGeometry(3, 2.2, 4), new THREE.MeshLambertMaterial({ color: 0xc3ccd8 }));
+camBody.position.copy(CAM); camBody.lookAt(0, 3, 0); groups.camera.add(camBody);
+const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 3, 24), new THREE.MeshLambertMaterial({ color: 0x3a4660 }));
+lens.position.copy(CAM.clone().add(new THREE.Vector3(0, 3, 0).sub(CAM).normalize().multiplyScalar(3.2)));
+lens.lookAt(0, 3, 0); lens.rotateX(Math.PI / 2); groups.camera.add(lens);
+groups.camera.add(label("Centre-field camera (solved) · 390.5 ft out · 25.6 ft toward third · 20.8 ft up", CAM.clone().add(P(0, 4, 0))));
+
+// Release plane: vertical, square to the mound-plate line, 3 ft in front of the rubber (y = 690 in).
+const planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(12, 9), new THREE.MeshBasicMaterial({ color: BLUE, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
+planeMesh.position.set(0, MOUND_H + 4.5, PLANE_Z); groups.plane.add(planeMesh);
+groups.plane.add(line([P(-6, MOUND_H, PLANE_Z), P(6, MOUND_H, PLANE_Z), P(6, MOUND_H + 9, PLANE_Z), P(-6, MOUND_H + 9, PLANE_Z), P(-6, MOUND_H, PLANE_Z)], BLUE, 0.7));
+groups.plane.add(label("Release plane · y = 690 in (3 ft in front of the rubber)", P(-6, MOUND_H + 9.4, PLANE_Z), "blue"));
+
+// A right-handed pitcher at release, seen from behind, his keypoints on the plane (x toward third, height in ft).
+const J = { lAnk: [-1.3, 0.25], lKnee: [-1.05, 1.9], lHip: [-0.5, 3.3], rHip: [0.45, 3.45], rKnee: [1.0, 2.2], rAnk: [1.55, 1.0],
+            lSho: [-0.95, 4.95], rSho: [0.55, 5.25], rElb: [1.15, 5.95], rWri: [1.35, 6.75], lElb: [-1.6, 4.4], lWri: [-1.35, 3.8], head: [-0.25, 5.75] };
+const at = k => P(J[k][0], MOUND_H + J[k][1], PLANE_Z);
+const bones = [["lAnk", "lKnee"], ["lKnee", "lHip"], ["lHip", "rHip"], ["rHip", "rKnee"], ["rKnee", "rAnk"], ["lHip", "lSho"], ["rHip", "rSho"],
+               ["lSho", "rSho"], ["rSho", "rElb"], ["rElb", "rWri"], ["lSho", "lElb"], ["lElb", "lWri"]];
+for (const [a, b] of bones) groups.plane.add(line([at(a), at(b)], 0xdfe6f0));
+for (const k of Object.keys(J)) { groups.plane.add(dot(at(k), BLUE, k === "rWri" ? 0.16 : 0.1)); groups.bodyRays.add(line([CAM, at(k)], BLUE, k === "rWri" ? 0.9 : 0.25)); }
+groups.plane.add(dot(at("head"), 0xdfe6f0, 0.38));
+// Side lean, read on the plane: hips' mid-point -> shoulders' mid-point against the vertical.
+const hipM = at("lHip").add(at("rHip")).multiplyScalar(0.5), shoM = at("lSho").add(at("rSho")).multiplyScalar(0.5);
+groups.plane.add(line([hipM, shoM], AMBER), line([hipM, P(hipM.x, shoM.y + 0.6, PLANE_Z)], AMBER, 0.6));
+const lean = Math.atan2(Math.abs(shoM.x - hipM.x), shoM.y - hipM.y) * 180 / Math.PI;
+groups.plane.add(label(`Side lean ${lean.toFixed(1)}° = atan2(|Δx|, Δup), on the plane`, shoM.clone().add(P(-3.4, 1.5, 0)), "amber"));
+groups.plane.add(label("Wrist: traced back along its camera ray to the plane", at("rWri").add(P(1.4, 0.4, 0)), "blue"));
+
+// Views.
+const VIEWS = {
+  overview:  { pos: P(-340, 230, 120), target: P(12, 0, 200), fov: 40, show: ["field", "landmarks", "lmRays", "camera", "plane", "bodyRays"] },
+  landmarks: { pos: P(-14, 13, -18), target: P(0, 0, 1.5), fov: 40, show: ["field", "landmarks"] },
+  solve:     { pos: P(-10, 9, -26), target: P(8, 4, 70), fov: 45, show: ["field", "landmarks", "lmRays", "camera"] },
+  plane:     { pos: P(-16, 9, 74), target: P(0, 4.5, PLANE_Z), fov: 45, show: ["field", "plane", "bodyRays"] },
+  camera:    { pos: CAM.clone(), target: P(0, 4, 30), fov: VFOV, show: ["field", "landmarks", "plane"] },  // the true lens: ~2.5 deg
+};
+function setView(name) {
+  const v = VIEWS[name];
+  for (const [k, g] of Object.entries(groups)) g.visible = v.show.includes(k);
+  view.fov = v.fov; view.updateProjectionMatrix();
+  view.position.copy(v.pos); controls.target.copy(v.target); controls.update();
+  for (const b of document.querySelectorAll("#views button")) b.setAttribute("aria-pressed", String(b.dataset.view === name));
+}
+document.getElementById("views").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h); labels.setSize(w, h); view.aspect = w / h; view.updateProjectionMatrix();
+}
+addEventListener("resize", resize); resize(); setView("landmarks");
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, view); labels.render(scene, view); });
+</script>
+</body>
+</html>

@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>投手狀態監測</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one reading column (max 1040px). Scorebug-style dark readouts carry the numbers; everything else stays quiet. */
+/* Same look as the site's home page (lab/src/psa_lab/home_template.html): navy with a faint grid, three muted text
+   levels, amber for the one accent; --s1 to --s3 tell pitchers apart. One deliberate dark look. */
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --panel: #121b2c;
+  --ink: #e4e9f0;
+  --ink-2: #98a4b5;
+  --muted: #7a8699;
+  --line: #1f2a3d;
+  --accent: #f2b84b;
+  --accent-soft: #2e2716;
+  --bug-bg: #121b2c;
+  --bug-ink: #e4e9f0;
+  --bug-dim: #98a4b5;
+  --bug-amber: #f2b84b;
+  --s1: #6f9ee8; --s2: #f2b84b; --s3: #5cc98a;
+  --good: #5cc98a; --good-bg: #16302a;
+  --warn: #e2b04a; --warn-bg: #33291a;
+  --bad: #ef8a7c; --bad-bg: #3a2024;
+  --display: "Inter", "Noto Sans TC", system-ui, sans-serif;
+  --body: "Inter", "Noto Sans TC", system-ui, -apple-system, "PingFang TC", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background-color: var(--bg); color: var(--ink);
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  font: 15px/1.6 var(--body);
+  padding-inline: 16px; padding-block: 0 64px;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h2 { font: 600 24px/1.2 var(--display); letter-spacing: -0.01em; }
+h3 { font: 600 17px/1.3 var(--display); }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 20px; }
+.lede { color: var(--ink-2); font-size: 16px; }
+
+/* Header */
+header { padding-top: 40px; display: grid; gap: 18px; }
+header h1 { font: 600 clamp(34px, 6vw, 52px)/1.08 var(--display); letter-spacing: -0.02em; }
+header h1 small { display: block; font: 500 18px/1.3 var(--body); color: var(--ink-2); margin-top: 10px; letter-spacing: 0; }
+.source { display: flex; flex-wrap: wrap; gap: 6px 16px; font: 13px/1.5 var(--mono); color: var(--muted); }
+
+/* Scorebug-style readout row */
+.bugrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--bug-bg); color: var(--bug-ink); border-radius: 6px; overflow: hidden; }
+.bugrow > div { padding: 14px 16px; display: grid; gap: 2px; border-left: 1px solid #ffffff14; }
+.bugrow > div:first-child { border-left: 0; }
+.bugrow .v { font: 500 30px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.bugrow .v em { font-style: normal; color: var(--bug-amber); }
+.bugrow .k { font: 12px/1.3 var(--body); color: var(--bug-dim); }
+@media (max-width: 640px) { .bugrow { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bugrow > div:nth-child(3) { border-left: 0; } .bugrow > div:nth-child(n+3) { border-top: 1px solid #ffffff14; } }
+
+/* Pipeline steps */
+.steps { display: grid; gap: 28px; counter-reset: step; }
+.step { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.step-head { display: grid; gap: 8px; align-content: start; }
+.step-head .n { font: 700 15px/1 var(--mono); color: var(--accent); }
+.step-head p { color: var(--ink-2); font-size: 14px; }
+@media (max-width: 760px) { .step { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+/* Step 5: the PSI formulas, same as the home page's algorithm cards */
+.psi { display: grid; gap: 10px; }
+.psi-row { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; align-items: start; background: var(--panel); border-radius: 12px; padding: 14px 16px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.psi-row .k { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 500 12px/1 var(--mono); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); background: rgba(255,255,255,.05); }
+.psi-row code { display: block; font: 500 14px/1.5 var(--mono); color: var(--ink); }
+.psi-row p { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.55; }
+.bands { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+.pill { display: inline-block; border-radius: 999px; padding: 1px 8px; margin-right: 6px; font: 12px/1.6 var(--mono); }
+.pill.steady { color: #9dbcf0; background: rgba(111,158,232,.1); box-shadow: inset 0 0 0 1px rgba(111,158,232,.25); }
+.pill.look { color: #c3ccd8; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+.pill.flag { color: var(--accent); background: rgba(242,184,75,.1); box-shadow: inset 0 0 0 1px rgba(242,184,75,.25); }
+.shots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-content: start; }
+@media (max-width: 640px) { .shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.shot { position: relative; border-radius: 4px; overflow: hidden; outline: 2px solid transparent; }
+.shot.cf { outline-color: var(--accent); }
+.shot img { opacity: 0.55; }
+.shot.noimg { aspect-ratio: 16 / 9; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: flex-end; }
+.shot.noimg i { display: block; width: 100%; background: var(--line); }
+.shot.noimg.cf i { background: var(--accent-soft); }
+.note-box { font: 13px/1.5 var(--body); color: var(--ink-2); }
+.viewswitch { justify-self: start; display: inline-flex; align-items: center; gap: 10px; font: 13px var(--body); color: var(--ink-2); }
+.shot.cf img { opacity: 1; }
+.shot span { position: absolute; left: 4px; bottom: 4px; font: 500 11px/1 var(--mono); background: var(--bug-bg); color: var(--bug-ink); padding: 3px 5px; border-radius: 3px; }
+.shot.cf span { background: var(--accent); color: var(--bg); }
+.bug { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 640px) { .bug { grid-template-columns: minmax(0, 1fr); } }
+.bug img { border-radius: 4px; }
+dl.kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font: 14px/1.4 var(--mono); }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; font-weight: 500; }
+.strip { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; align-items: start; align-content: start; }
+@media (max-width: 640px) { .strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } .strip figure:nth-child(-n+4) { display: none; } }
+.strip figure { margin: 0; display: grid; gap: 4px; }
+.strip img { border-radius: 3px; outline: 2px solid transparent; }
+.strip figure.rel img { outline-color: var(--bug-amber); }
+.strip figcaption { font: 11px/1 var(--mono); color: var(--muted); text-align: center; }
+.strip figure.rel figcaption { color: var(--ink); font-weight: 500; }
+.srcswitch { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--panel); width: fit-content; }
+.srcswitch button { border: 0; background: transparent; padding: 8px 14px; font: 500 13px/1 var(--mono); cursor: pointer; color: var(--ink-2); }
+.srcswitch button[aria-checked="true"] { background: var(--line); color: var(--ink); }
+.srcnote { font: 13px/1.5 var(--body); color: var(--ink-2); max-width: 72ch; }
+td.off { color: var(--warn); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 13px/1.4 var(--body); color: var(--ink-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend svg { color: var(--ink-2); }
+.fields { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; align-items: flex-start; }
+.chip { font: 500 12px/1 var(--mono); padding: 6px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--ink); }
+
+/* Outing board */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { font: 600 15px/1 var(--body); padding: 10px 14px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.tab[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--sw); }
+.tab .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sw); }
+.tab small { font: 12px/1 var(--mono); color: var(--muted); }
+.wpsi { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 24px; align-items: center; margin-bottom: 12px; padding: 16px 18px; background: var(--panel); border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.wpsi[hidden] { display: none; }
+.wpsi .k { font: 13px/1.3 var(--body); color: var(--ink-2); }
+.wpsi .big { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.wpsi .big b { font: 700 40px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--ink); }
+.wpsi .parts { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 13px/1.6 var(--mono); color: var(--ink-2); }
+.wpsi .parts span b { color: var(--ink); font-weight: 500; }
+.wpsi .note { grid-column: 1 / -1; margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+@media (max-width: 760px) { .wpsi { grid-template-columns: minmax(0, 1fr); } }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 4px; }
+.tile .k { font: 13px/1.3 var(--body); color: var(--ink-2); }
+.tile .v { font: 700 32px/1.05 var(--display); font-variant-numeric: tabular-nums; }
+.tile .s { font: 12px/1.4 var(--mono); color: var(--muted); }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+.chart.wide { grid-column: 1 / -1; }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 14px 8px; display: grid; gap: 6px; position: relative; min-width: 0; }
+.chart header { padding: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.chart h3 { font-size: 18px; }
+.chart .note { font: 12px/1.3 var(--mono); color: var(--muted); }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart svg text { font: 11px var(--mono); fill: var(--muted); }
+.chart .grid line { stroke: var(--line); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--bug-bg); color: var(--bug-ink); font: 12px/1.45 var(--mono); padding: 8px 10px; border-radius: 4px; white-space: nowrap; z-index: 2; }
+.tip b { color: var(--bug-amber); font-weight: 500; }
+.badge { font: 500 11px/1 var(--mono); padding: 4px 6px; border-radius: 3px; letter-spacing: 0.04em; }
+.badge.good { background: var(--good-bg); color: var(--good); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+
+/* Pitch log */
+.log { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 760px) { .log { grid-template-columns: minmax(0, 1fr); } }
+.detail { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 760px) { .detail { position: static; } }
+.detail .img { background: var(--bug-bg); aspect-ratio: 750 / 730; display: grid; place-items: center; color: var(--bug-dim); font: 13px var(--mono); text-align: center; padding: 12px; }
+.detail .img img { width: 100%; height: 100%; object-fit: cover; }
+.detail .body { padding: 12px 14px; display: grid; gap: 8px; }
+.detail .body .v { font: 700 24px/1 var(--display); }
+.tablebox { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; max-height: 620px; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font: 13px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 500; font-size: 12px; z-index: 1; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--accent-soft); }
+tbody tr[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+td .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+td.dim { color: var(--muted); }
+
+/* Findings */
+.verdicts { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.verdicts table { font: 14px/1.45 var(--body); }
+.verdicts th, .verdicts td { text-align: left; white-space: normal; vertical-align: top; padding: 12px 14px; }
+.verdicts td:first-child { font-weight: 600; white-space: nowrap; }
+.verdicts td .num { font-family: var(--mono); }
+ol.next { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 72ch; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .tab, tbody tr { transition: background-color .12s, box-shadow .12s; } }
+/* Top bar, as on the home page: brand on the left (links home), plain text links on the right. */
+.games { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.games a { font: 500 14px/1.2 var(--body); color: var(--ink-2); text-decoration: none; padding: 0; border: 0; background: none; box-shadow: none; }
+.games a:first-child { color: var(--ink); font-weight: 600; margin-right: auto; }
+.games a:hover { color: var(--ink); }
+.games a[aria-current="page"] { color: var(--ink); box-shadow: none; border: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <nav class="games" id="games" aria-label="Games" hidden></nav>
+  <div class="eyebrow">PSA · Pitcher Status Analyzer · how the analysis works</div>
+  <h1>投手狀態監測<small>One broadcast video in, one row per pitch out: pitch count, velocity, delivery type and the pitcher's posture at release.</small></h1>
+  <p class="lede">The input is game video from the center-field camera angle, the view every broadcast uses for pitches. The system finds that view on its own, reads the scorebug for pitch count, velocity and runners, and measures the pitcher at release. The question: is it consistent enough to see a pitcher change across an outing?</p>
+  <div class="source" id="source"></div>
+
+</header>
+
+<div class="bugrow" id="bugrow" aria-label="Run summary"></div>
+
+<section id="how">
+  <div class="eyebrow">How it works</div>
+  <h2>Four passes over the video, then one score</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-head"><span class="n">1</span><h3>Find the pitching shot</h3><p>Each frame is shrunk to 64×36 and compared with a reference center-field frame. Replays, close-ups and dugout shots score low and are skipped.</p></div>
+      <div class="shots" id="shots"></div>
+    </div>
+    <div class="step">
+      <div class="step-head"><span class="n">2</span><h3>Read the scorebug</h3><p>macOS text recognition reads the overlay twice a second. After each pitch it shows the velocity, then the pitch count (NP) and ball-strike count update.</p></div>
+      <div class="bug" id="bug"></div>
+    </div>
+    <div class="viewswitch" id="viewswitch" hidden><span>Images</span>
+    <div class="srcswitch" role="radiogroup" aria-label="Image view">
+      <button type="button" role="radio" data-view="footage">Broadcast footage</button>
+      <button type="button" role="radio" data-view="drawing">Pose drawing</button>
+    </div>
+    </div>
+    <div class="step">
+      <div class="step-head"><span class="n">3</span><h3>Track the pitcher's pose</h3><p>Apple Vision body pose runs on every pitching-shot frame. Release is the frame a learned picker, trained on hand-labeled releases, scores highest in the shot. <span id="frameGap"></span></p></div>
+      <div class="strip" id="strip"></div>
+    </div>
+    <div class="step">
+      <div class="step-head"><span class="n">4</span><h3>Join into one row per pitch</h3><p>Each detected release is matched to the next NP increment on the scorebug, within 8 seconds. Pickoffs and false detections have no NP change, so they drop out. Runners on base mark the pitch as a stretch delivery.</p></div>
+      <div class="fields" id="fields"></div>
+    </div>
+    <div class="step">
+      <div class="step-head"><span class="n">5</span><h3>Score the outing (PSI)</h3><p>The rows of one outing are compared with the same pitcher's earlier outings, part by part: velocity and command (results), posture, timing and release consistency (mechanics). Season reports use his previous three outings; tournament reports use his earlier games of the tournament. One game alone has no season score, so the outing board below scores each pitcher's second half against his first half with the same formulas. Season and tournament scores are on the <a href="../#reports">live reports</a>, and the full algorithm with examples is on the <a href="../#algorithm">home page</a>.</p></div>
+      <div class="psi">
+        <div class="psi-row"><span class="k">1</span><div><code>d = |change| ÷ threshold</code><p>The threshold is the smallest change the measurement can detect at 95%, from pitch-to-pitch scatter and the number of pitches. d = 1 is a change just big enough to be real.</p></div></div>
+        <div class="psi-row"><span class="k">2</span><div><code>score = 100 · e<sup>−d²/4</sup></code><p>100 with no change, 78 at the threshold, 37 at twice it. Velocity and command count only drops; consistency only a wider spread.</p></div></div>
+        <div class="psi-row"><span class="k">3</span><div><code>PSI = ½ results + ½ mechanics</code><p>Each half is the average of its parts.</p>
+          <div class="bands"><span><span class="pill steady">80+</span>steady</span><span><span class="pill look">60–79</span>worth a look</span><span><span class="pill flag">below 60</span>flagged</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="board">
+  <div class="eyebrow">Outing board</div>
+  <h2>How each pitcher changed through the outing</h2>
+  <p class="lede">This is the within-game view: each pitch against the pitcher's own early pitches in the same game. PSI (step 5) compares whole outings instead. With runners on, pitchers switch from the windup to the stretch, which changes timing and posture. Each pitch is tagged from the base diamond on the scorebug, and the baseline uses the pitcher's own first 10 windup pitches so stretch pitches do not read as drift. Velocity drop is the most consistent within-game fatigue sign in the research. Arm slot is shown for reference only: its change under fatigue (about 1.7°) is smaller than video pose error.</p>
+  <div class="srcswitch" id="srcswitch" role="radiogroup" aria-label="Measurement source" hidden>
+    <button type="button" role="radio" data-src="lab">Labeled frames</button>
+    <button type="button" role="radio" data-src="det">Detected frames</button>
+  </div>
+  <p class="srcnote" id="srcnote" hidden></p>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="wpsi" id="wpsi" hidden></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="legend" id="legend"><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="currentColor"/></svg> Windup, bases empty</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg> Stretch, runners on</span><span>Shaded band: first 10 windup pitches, mean ± 1 SD</span></div>
+  <div class="charts" id="charts"></div>
+</section>
+
+<section id="log">
+  <div class="eyebrow">Pitch log</div>
+  <h2>Every pitch the scorebug counted</h2>
+  <div class="log">
+    <div class="detail" id="detail"></div>
+    <div class="tablebox"><table id="table"><thead><tr><th>Pitcher</th><th>NP</th><th>Runners</th><th>Delivery</th><th>Count</th><th>Result</th><th>km/h</th><th>Label</th><th>Δ det</th><th>Trunk °</th><th>Arm slot °</th><th>Video</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section id="scorecard" hidden>
+  <div class="eyebrow">Detector vs your labels</div>
+  <h2>How close the automatic release frame gets</h2>
+  <p class="lede" id="scoreLede"></p>
+  <div class="tiles" id="scoreTiles"></div>
+</section>
+
+<section id="findings">
+  <div class="eyebrow">What today showed</div>
+  <h2>Signals that are ready, borderline, or not usable yet</h2>
+  <div class="verdicts"><table><thead><tr><th>Signal</th><th>Why it matters</th><th>Today's run</th><th>Status</th></tr></thead><tbody id="verdicts"></tbody></table></div>
+  <h3>Next steps</h3>
+  <ol class="next">
+    <li>Widen PSI's thresholds to include ordinary outing-to-outing variation. A league-wide test on every 2023–2025 CPBL outing found fastball speed moves about ±2 km/h between outings, wider than the current threshold assumes, and the results half did not predict the next outing.</li>
+    <li>Check the mechanics half at known changes (2025 role switches and returns from 30+ days out), in progress.</li>
+    <li>Run full-game video for whole outings (60 to 90 pitches), so every pitch counts, not only the ones a highlight shows.</li>
+    <li>Have coaches review the outings PSI flags.</li>
+  </ol>
+</section>
+
+<footer>
+  <div id="srcCredit"></div>
+  <div>Metrics are for workload and consistency tracking. They are not a medical assessment.</div>
+</footer>
+
+</div>
+
+<script>
+const DATA = {"source": {"title": "2025 第十三屆中信盃黑豹旗 冠軍戰 羅東高工 vs 平鎮高中", "channel": "公視+", "url": "https://www.youtube.com/watch?v=SbqKPdi0Qzw", "start": 0, "end": 2430, "fps": 29.97}, "summary": {"cf_segments": 89, "cf_threshold": 0.8, "releases_detected": 83, "labelled_pitches_on_scorebug": 81, "releases_matched": 57, "shot_coverage": 0.63, "velo_read": 75}, "pitches": [{"pitcher": "林頡廷", "np": 1, "velo": 120, "count": "1-0", "t": 22.5, "detected": false, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 2, "velo": 123, "count": "2-0", "t": 32.6, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 978, "arm": 40.0, "trunk": 32.1, "relh": 1.58, "img_s": "img/skeleton/det_林頡廷_002.png", "img_f": "img/footage/det_林頡廷_002.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 42.8, "trunk": 32.1, "relh": 1.83, "frame": 978, "img_s": "img/skeleton/lab_林頡廷_002.png", "img_f": "img/footage/lab_林頡廷_002.jpg"}}, {"pitcher": "林頡廷", "np": 3, "velo": 121, "count": "3-0", "t": 46.4, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 1391, "arm": 41.3, "trunk": 34.5, "relh": 1.19, "img_s": "img/skeleton/det_林頡廷_003.png", "img_f": "img/footage/det_林頡廷_003.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 43.2, "trunk": 34.5, "relh": 1.84, "frame": 1391, "img_s": "img/skeleton/lab_林頡廷_003.png", "img_f": "img/footage/lab_林頡廷_003.jpg"}}, {"pitcher": "林頡廷", "np": 4, "velo": 123, "count": "0-0", "t": 63.9, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 1916, "arm": null, "trunk": 34.3, "relh": 1.28, "img_s": "img/skeleton/det_林頡廷_004.png", "img_f": "img/footage/det_林頡廷_004.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 44.9, "trunk": 34.3, "relh": 1.88, "frame": 1916, "img_s": "img/skeleton/lab_林頡廷_004.png", "img_f": "img/footage/lab_林頡廷_004.jpg"}}, {"pitcher": "林頡廷", "np": 5, "velo": 108, "count": "0-1", "t": 124.6, "detected": false, "result": "strike", "bases": "1B", "delivery": "stretch", "det": {"ok": false}, "label_status": "replay", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 6, "velo": 129, "count": "0-2", "t": 138.6, "detected": true, "result": "strike", "bases": "1B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 4154, "arm": 34.6, "trunk": 24.2, "relh": 1.13, "img_s": "img/skeleton/det_林頡廷_006.png", "img_f": "img/footage/det_林頡廷_006.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 41.8, "trunk": 24.2, "relh": 1.91, "frame": 4154, "img_s": "img/skeleton/lab_林頡廷_006.png", "img_f": "img/footage/lab_林頡廷_006.jpg"}}, {"pitcher": "林頡廷", "np": 7, "velo": 103, "count": "1-2", "t": 185.4, "detected": true, "result": "ball", "bases": "1B", "delivery": "stretch", "det": {"ok": true, "arm_ok": false, "frame": 5555, "arm": null, "trunk": 34.4, "relh": 1.31, "img_s": "img/skeleton/det_林頡廷_007.png", "img_f": "img/footage/det_林頡廷_007.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 34.4, "relh": 1.93, "frame": 5555, "img_s": "img/skeleton/lab_林頡廷_007.png", "img_f": "img/footage/lab_林頡廷_007.jpg"}}, {"pitcher": "林頡廷", "np": 8, "velo": 108, "count": "0-0", "t": 222.2, "detected": false, "result": NaN, "bases": "1B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 9, "velo": 126, "count": "0-1", "t": 252.8, "detected": false, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 10, "velo": 114, "count": "0-2", "t": 256.3, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 7680, "arm": 39.3, "trunk": 34.7, "relh": 1.35, "img_s": "img/skeleton/det_林頡廷_010.png", "img_f": "img/footage/det_林頡廷_010.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 44.2, "trunk": 34.7, "relh": 1.93, "frame": 7680, "img_s": "img/skeleton/lab_林頡廷_010.png", "img_f": "img/footage/lab_林頡廷_010.jpg"}}, {"pitcher": "林頡廷", "np": 11, "velo": 114, "count": "1-2", "t": 275.9, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 8268, "arm": 42.8, "trunk": 38.5, "relh": 1.22, "img_s": "img/skeleton/det_林頡廷_011.png", "img_f": "img/footage/det_林頡廷_011.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 47.2, "trunk": 38.5, "relh": 1.85, "frame": 8268, "img_s": "img/skeleton/lab_林頡廷_011.png", "img_f": "img/footage/lab_林頡廷_011.jpg"}}, {"pitcher": "林頡廷", "np": 12, "velo": 114, "count": "2-2", "t": 294.3, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 8820, "arm": 36.5, "trunk": 26.1, "relh": 1.4, "img_s": "img/skeleton/det_林頡廷_012.png", "img_f": "img/footage/det_林頡廷_012.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 36.5, "trunk": 26.1, "relh": 1.85, "frame": 8820, "img_s": "img/skeleton/lab_林頡廷_012.png", "img_f": "img/footage/lab_林頡廷_012.jpg"}}, {"pitcher": "林頡廷", "np": 13, "velo": 125, "count": "0-0", "t": 318.8, "detected": false, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 16, "velo": 139, "count": "0-0", "t": 414.4, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 12420, "arm": null, "trunk": 45.7, "relh": 1.32, "img_s": "img/skeleton/det_吳丞顥_016.png", "img_f": "img/footage/det_吳丞顥_016.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 35.8, "trunk": 45.7, "relh": 1.62, "frame": 12420, "img_s": "img/skeleton/lab_吳丞顥_016.png", "img_f": "img/footage/lab_吳丞顥_016.jpg"}}, {"pitcher": "吳丞顥", "np": 17, "velo": 122, "count": "0-0", "t": 421.9, "detected": false, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 18, "velo": 140, "count": "1-0", "t": 442.8, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 13272, "arm": 27.8, "trunk": 33.5, "relh": 1.3, "img_s": "img/skeleton/det_吳丞顥_018.png", "img_f": "img/footage/det_吳丞顥_018.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 27.8, "trunk": 33.5, "relh": 1.7, "frame": 13272, "img_s": "img/skeleton/lab_吳丞顥_018.png", "img_f": "img/footage/lab_吳丞顥_018.jpg"}}, {"pitcher": "吳丞顥", "np": 19, "velo": 137, "count": "2-0", "t": 457.7, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 13718, "arm": null, "trunk": 36.9, "relh": 1.26, "img_s": "img/skeleton/det_吳丞顥_019.png", "img_f": "img/footage/det_吳丞顥_019.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 36.9, "relh": 1.84, "frame": 13718, "img_s": "img/skeleton/lab_吳丞顥_019.png", "img_f": "img/footage/lab_吳丞顥_019.jpg"}}, {"pitcher": "吳丞顥", "np": 20, "velo": 140, "count": "2-1", "t": 474.3, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 14214, "arm": 50.5, "trunk": 44.7, "relh": 1.27, "img_s": "img/skeleton/det_吳丞顥_020.png", "img_f": "img/footage/det_吳丞顥_020.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 38.8, "trunk": 44.7, "relh": 1.77, "frame": 14214, "img_s": "img/skeleton/lab_吳丞顥_020.png", "img_f": "img/footage/lab_吳丞顥_020.jpg"}}, {"pitcher": "吳丞顥", "np": 21, "velo": 143, "count": "2-2", "t": 492.4, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 14758, "arm": 39.9, "trunk": 42.8, "relh": 1.37, "img_s": "img/skeleton/det_吳丞顥_021.png", "img_f": "img/footage/det_吳丞顥_021.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 39.9, "trunk": 42.8, "relh": 1.91, "frame": 14758, "img_s": "img/skeleton/lab_吳丞顥_021.png", "img_f": "img/footage/lab_吳丞顥_021.jpg"}}, {"pitcher": "吳丞顥", "np": 22, "velo": 143, "count": "0-0", "t": 513.3, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 15383, "arm": null, "trunk": 40.7, "relh": 1.23, "img_s": "img/skeleton/det_吳丞顥_022.png", "img_f": "img/footage/det_吳丞顥_022.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 40.7, "relh": 1.73, "frame": 15383, "img_s": "img/skeleton/lab_吳丞顥_022.png", "img_f": "img/footage/lab_吳丞顥_022.jpg"}}, {"pitcher": "吳丞顥", "np": 23, "velo": 141, "count": "0-1", "t": 544.4, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": false, "arm_ok": false, "frame": 16316, "arm": null, "trunk": null, "relh": null}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 38.7, "trunk": 40.0, "relh": 1.77, "frame": 16316, "img_s": "img/skeleton/lab_吳丞顥_023.png", "img_f": "img/footage/lab_吳丞顥_023.jpg"}}, {"pitcher": "吳丞顥", "np": 24, "velo": 120, "count": "0-2", "t": 563.1, "detected": false, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 14, "velo": 125, "count": "1-0", "t": 669.2, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 20056, "arm": 34.7, "trunk": 30.6, "relh": 1.2, "img_s": "img/skeleton/det_林頡廷_014.png", "img_f": "img/footage/det_林頡廷_014.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 41.5, "trunk": 30.6, "relh": 1.85, "frame": 20056, "img_s": "img/skeleton/lab_林頡廷_014.png", "img_f": "img/footage/lab_林頡廷_014.jpg"}}, {"pitcher": "林頡廷", "np": 15, "velo": 120, "count": "1-1", "t": 685.0, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 20529, "arm": 33.4, "trunk": 32.2, "relh": 1.16, "img_s": "img/skeleton/det_林頡廷_015.png", "img_f": "img/footage/det_林頡廷_015.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 42.1, "trunk": 32.2, "relh": 1.83, "frame": 20529, "img_s": "img/skeleton/lab_林頡廷_015.png", "img_f": "img/footage/lab_林頡廷_015.jpg"}}, {"pitcher": "林頡廷", "np": 16, "velo": 124, "count": "2-1", "t": 701.3, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 21017, "arm": null, "trunk": 27.6, "relh": 1.17, "img_s": "img/skeleton/det_林頡廷_016.png", "img_f": "img/footage/det_林頡廷_016.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 40.8, "trunk": 27.6, "relh": 1.82, "frame": 21017, "img_s": "img/skeleton/lab_林頡廷_016.png", "img_f": "img/footage/lab_林頡廷_016.jpg"}}, {"pitcher": "林頡廷", "np": 17, "velo": 124, "count": "0-0", "t": 716.1, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 21462, "arm": 42.1, "trunk": 28.7, "relh": 1.2, "img_s": "img/skeleton/det_林頡廷_017.png", "img_f": "img/footage/det_林頡廷_017.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 42.1, "trunk": 28.7, "relh": 1.82, "frame": 21462, "img_s": "img/skeleton/lab_林頡廷_017.png", "img_f": "img/footage/lab_林頡廷_017.jpg"}}, {"pitcher": "林頡廷", "np": 18, "velo": 109, "count": "0-1", "t": 750.3, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 22486, "arm": 31.5, "trunk": 29.6, "relh": 1.13, "img_s": "img/skeleton/det_林頡廷_018.png", "img_f": "img/footage/det_林頡廷_018.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 35.6, "trunk": 29.6, "relh": 1.91, "frame": 22486, "img_s": "img/skeleton/lab_林頡廷_018.png", "img_f": "img/footage/lab_林頡廷_018.jpg"}}, {"pitcher": "林頡廷", "np": 19, "velo": 104, "count": "0-0", "t": 773.8, "detected": false, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 20, "velo": 104, "count": "1-0", "t": 797.8, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 23910, "arm": 41.5, "trunk": 33.2, "relh": 1.39, "img_s": "img/skeleton/det_林頡廷_020.png", "img_f": "img/footage/det_林頡廷_020.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 46.7, "trunk": 33.2, "relh": 2.08, "frame": 23910, "img_s": "img/skeleton/lab_林頡廷_020.png", "img_f": "img/footage/lab_林頡廷_020.jpg"}}, {"pitcher": "林頡廷", "np": 21, "velo": 126, "count": "2-0", "t": 811.7, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 24327, "arm": 35.4, "trunk": 29.8, "relh": 1.42, "img_s": "img/skeleton/det_林頡廷_021.png", "img_f": "img/footage/det_林頡廷_021.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 37.8, "trunk": 29.8, "relh": 1.91, "frame": 24327, "img_s": "img/skeleton/lab_林頡廷_021.png", "img_f": "img/footage/lab_林頡廷_021.jpg"}}, {"pitcher": "林頡廷", "np": 22, "velo": 126, "count": "2-1", "t": 830.3, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 24884, "arm": 42.9, "trunk": 35.0, "relh": 1.5, "img_s": "img/skeleton/det_林頡廷_022.png", "img_f": "img/footage/det_林頡廷_022.jpg"}, "label_status": "release", "err": 1, "lab": {"ok": true, "arm_ok": true, "arm": 42.0, "trunk": 29.9, "relh": 1.85, "frame": 24883, "img_s": "img/skeleton/lab_林頡廷_022.png", "img_f": "img/footage/lab_林頡廷_022.jpg"}}, {"pitcher": "林頡廷", "np": 23, "velo": 131, "count": "3-1", "t": 844.5, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 25309, "arm": null, "trunk": 28.5, "relh": 1.36, "img_s": "img/skeleton/det_林頡廷_023.png", "img_f": "img/footage/det_林頡廷_023.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 28.5, "relh": 1.85, "frame": 25309, "img_s": "img/skeleton/lab_林頡廷_023.png", "img_f": "img/footage/lab_林頡廷_023.jpg"}}, {"pitcher": "林頡廷", "np": 24, "velo": 125, "count": "0-0", "t": 863.9, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 25892, "arm": 37.0, "trunk": 35.6, "relh": 1.27, "img_s": "img/skeleton/det_林頡廷_024.png", "img_f": "img/footage/det_林頡廷_024.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 41.0, "trunk": 35.6, "relh": 1.76, "frame": 25892, "img_s": "img/skeleton/lab_林頡廷_024.png", "img_f": "img/footage/lab_林頡廷_024.jpg"}}, {"pitcher": "林頡廷", "np": 25, "velo": 125, "count": "1-0", "t": 914.4, "detected": true, "result": "ball", "bases": "1B", "delivery": "stretch", "det": {"ok": true, "arm_ok": false, "frame": 27405, "arm": null, "trunk": 27.9, "relh": 1.29, "img_s": "img/skeleton/det_林頡廷_025.png", "img_f": "img/footage/det_林頡廷_025.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 27.9, "relh": 1.75, "frame": 27405, "img_s": "img/skeleton/lab_林頡廷_025.png", "img_f": "img/footage/lab_林頡廷_025.jpg"}}, {"pitcher": "林頡廷", "np": 26, "velo": 110, "count": "1-1", "t": 933.1, "detected": true, "result": "strike", "bases": "1B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 27966, "arm": 38.3, "trunk": 29.9, "relh": 1.37, "img_s": "img/skeleton/det_林頡廷_026.png", "img_f": "img/footage/det_林頡廷_026.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 44.3, "trunk": 29.9, "relh": 1.89, "frame": 27966, "img_s": "img/skeleton/lab_林頡廷_026.png", "img_f": "img/footage/lab_林頡廷_026.jpg"}}, {"pitcher": "林頡廷", "np": 27, "velo": 110, "count": "1-2", "t": 961.4, "detected": true, "result": "strike", "bases": "1B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 28812, "arm": 34.0, "trunk": 29.6, "relh": 1.25, "img_s": "img/skeleton/det_林頡廷_027.png", "img_f": "img/footage/det_林頡廷_027.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 36.2, "trunk": 29.6, "relh": 1.76, "frame": 28812, "img_s": "img/skeleton/lab_林頡廷_027.png", "img_f": "img/footage/lab_林頡廷_027.jpg"}}, {"pitcher": "林頡廷", "np": 28, "velo": 113, "count": "2-2", "t": 981.3, "detected": false, "result": "ball", "bases": "1B", "delivery": "stretch", "det": {"ok": false}, "label_status": "release", "err": null, "lab": {"ok": false, "frame": 29411}}, {"pitcher": "林頡廷", "np": 29, "velo": 75, "count": "3-2", "t": 1001.7, "detected": true, "result": "ball", "bases": "1B", "delivery": "stretch", "det": {"ok": true, "arm_ok": false, "frame": 30021, "arm": null, "trunk": 27.9, "relh": 1.18, "img_s": "img/skeleton/det_林頡廷_029.png", "img_f": "img/footage/det_林頡廷_029.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 35.8, "trunk": 27.9, "relh": 1.75, "frame": 30021, "img_s": "img/skeleton/lab_林頡廷_029.png", "img_f": "img/footage/lab_林頡廷_029.jpg"}}, {"pitcher": "林頡廷", "np": 30, "velo": 113, "count": "0-0", "t": 1030.5, "detected": false, "result": NaN, "bases": "1B,2B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 31, "velo": 113, "count": "0-1", "t": 1053.8, "detected": true, "result": "strike", "bases": "1B,2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 31582, "arm": 29.1, "trunk": 31.2, "relh": 1.13, "img_s": "img/skeleton/det_林頡廷_031.png", "img_f": "img/footage/det_林頡廷_031.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 31.2, "relh": 1.46, "frame": 31582, "img_s": "img/skeleton/lab_林頡廷_031.png", "img_f": "img/footage/lab_林頡廷_031.jpg"}}, {"pitcher": "林頡廷", "np": 32, "velo": 123, "count": "0-0", "t": 1079.6, "detected": false, "result": NaN, "bases": "1B,2B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 25, "velo": null, "count": "0-0", "t": 1166.7, "detected": false, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 26, "velo": 139, "count": "0-1", "t": 1170.5, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 35079, "arm": null, "trunk": 36.8, "relh": 1.26, "img_s": "img/skeleton/det_吳丞顥_026.png", "img_f": "img/footage/det_吳丞顥_026.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 38.4, "trunk": 36.8, "relh": 1.74, "frame": 35079, "img_s": "img/skeleton/lab_吳丞顥_026.png", "img_f": "img/footage/lab_吳丞顥_026.jpg"}}, {"pitcher": "吳丞顥", "np": 27, "velo": 121, "count": "1-1", "t": 1184.2, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 35490, "arm": 34.7, "trunk": 28.1, "relh": 1.4, "img_s": "img/skeleton/det_吳丞顥_027.png", "img_f": "img/footage/det_吳丞顥_027.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 34.7, "trunk": 28.1, "relh": 1.68, "frame": 35490, "img_s": "img/skeleton/lab_吳丞顥_027.png", "img_f": "img/footage/lab_吳丞顥_027.jpg"}}, {"pitcher": "吳丞顥", "np": 28, "velo": 136, "count": "2-1", "t": 1200.5, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 35978, "arm": 41.7, "trunk": 38.8, "relh": 1.41, "img_s": "img/skeleton/det_吳丞顥_028.png", "img_f": "img/footage/det_吳丞顥_028.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 41.7, "trunk": 38.8, "relh": 1.85, "frame": 35978, "img_s": "img/skeleton/lab_吳丞顥_028.png", "img_f": "img/footage/lab_吳丞顥_028.jpg"}}, {"pitcher": "吳丞顥", "np": 29, "velo": 140, "count": "2-2", "t": 1221.4, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 36606, "arm": 36.4, "trunk": 44.8, "relh": 1.34, "img_s": "img/skeleton/det_吳丞顥_029.png", "img_f": "img/footage/det_吳丞顥_029.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 36.5, "trunk": 44.8, "relh": 1.62, "frame": 36606, "img_s": "img/skeleton/lab_吳丞顥_029.png", "img_f": "img/footage/lab_吳丞顥_029.jpg"}}, {"pitcher": "吳丞顥", "np": 30, "velo": 141, "count": "3-2", "t": 1240.4, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 37174, "arm": null, "trunk": 46.9, "relh": 1.2, "img_s": "img/skeleton/det_吳丞顥_030.png", "img_f": "img/footage/det_吳丞顥_030.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 40.9, "trunk": 46.9, "relh": 1.79, "frame": 37174, "img_s": "img/skeleton/lab_吳丞顥_030.png", "img_f": "img/footage/lab_吳丞顥_030.jpg"}}, {"pitcher": "吳丞顥", "np": 31, "velo": 138, "count": "0-0", "t": 1260.4, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 37773, "arm": 38.5, "trunk": 45.5, "relh": 1.33, "img_s": "img/skeleton/det_吳丞顥_031.png", "img_f": "img/footage/det_吳丞顥_031.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 37.0, "trunk": 45.5, "relh": 1.58, "frame": 37773, "img_s": "img/skeleton/lab_吳丞顥_031.png", "img_f": "img/footage/lab_吳丞顥_031.jpg"}}, {"pitcher": "吳丞顥", "np": 32, "velo": null, "count": "0-0", "t": 1312.8, "detected": false, "result": NaN, "bases": "1B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 33, "velo": 142, "count": "0-1", "t": 1353.9, "detected": false, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 34, "velo": 142, "count": "0-2", "t": 1354.7, "detected": true, "result": "strike", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 40600, "arm": 39.1, "trunk": 45.5, "relh": 1.51, "img_s": "img/skeleton/det_吳丞顥_034.png", "img_f": "img/footage/det_吳丞顥_034.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 39.3, "trunk": 45.5, "relh": 1.81, "frame": 40600, "img_s": "img/skeleton/lab_吳丞顥_034.png", "img_f": "img/footage/lab_吳丞顥_034.jpg"}}, {"pitcher": "吳丞顥", "np": 35, "velo": 139, "count": "1-2", "t": 1376.8, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": false, "frame": 41262, "arm": null, "trunk": 36.8, "relh": 1.22, "img_s": "img/skeleton/det_吳丞顥_035.png", "img_f": "img/footage/det_吳丞顥_035.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 36.8, "relh": 1.46, "frame": 41262, "img_s": "img/skeleton/lab_吳丞顥_035.png", "img_f": "img/footage/lab_吳丞顥_035.jpg"}}, {"pitcher": "吳丞顥", "np": 36, "velo": 139, "count": "0-0", "t": 1392.8, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 41743, "arm": 39.6, "trunk": 45.8, "relh": 1.4, "img_s": "img/skeleton/det_吳丞顥_036.png", "img_f": "img/footage/det_吳丞顥_036.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 38.6, "trunk": 45.8, "relh": 1.67, "frame": 41743, "img_s": "img/skeleton/lab_吳丞顥_036.png", "img_f": "img/footage/lab_吳丞顥_036.jpg"}}, {"pitcher": "林頡廷", "np": 33, "velo": 107, "count": "1-0", "t": 1511.5, "detected": false, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 34, "velo": 126, "count": "2-0", "t": 1517.4, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 45478, "arm": 37.5, "trunk": 28.3, "relh": 1.39, "img_s": "img/skeleton/det_林頡廷_034.png", "img_f": "img/footage/det_林頡廷_034.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 37.5, "trunk": 28.3, "relh": 1.85, "frame": 45478, "img_s": "img/skeleton/lab_林頡廷_034.png", "img_f": "img/footage/lab_林頡廷_034.jpg"}}, {"pitcher": "林頡廷", "np": 35, "velo": 121, "count": "3-0", "t": 1533.9, "detected": true, "result": "ball", "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 45970, "arm": 41.6, "trunk": 27.4, "relh": 1.42, "img_s": "img/skeleton/det_林頡廷_035.png", "img_f": "img/footage/det_林頡廷_035.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 40.6, "trunk": 27.4, "relh": 1.81, "frame": 45970, "img_s": "img/skeleton/lab_林頡廷_035.png", "img_f": "img/footage/lab_林頡廷_035.jpg"}}, {"pitcher": "林頡廷", "np": 36, "velo": 121, "count": "0-0", "t": 1548.9, "detected": true, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": true, "arm_ok": true, "frame": 46420, "arm": 41.6, "trunk": 31.2, "relh": 1.47, "img_s": "img/skeleton/det_林頡廷_036.png", "img_f": "img/footage/det_林頡廷_036.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 40.3, "trunk": 31.2, "relh": 1.81, "frame": 46420, "img_s": "img/skeleton/lab_林頡廷_036.png", "img_f": "img/footage/lab_林頡廷_036.jpg"}}, {"pitcher": "林頡廷", "np": 37, "velo": 110, "count": "0-0", "t": 1590.1, "detected": false, "result": NaN, "bases": "1B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 38, "velo": 122, "count": "1-0", "t": 1628.6, "detected": false, "result": "ball", "bases": "2B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 39, "velo": 125, "count": "0-0", "t": 1658.0, "detected": true, "result": NaN, "bases": "2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 49690, "arm": 40.2, "trunk": 31.6, "relh": 1.32, "img_s": "img/skeleton/det_林頡廷_039.png", "img_f": "img/footage/det_林頡廷_039.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 43.2, "trunk": 31.6, "relh": 1.88, "frame": 49690, "img_s": "img/skeleton/lab_林頡廷_039.png", "img_f": "img/footage/lab_林頡廷_039.jpg"}}, {"pitcher": "林頡廷", "np": 40, "velo": 125, "count": "1-0", "t": 1702.4, "detected": true, "result": "ball", "bases": "3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": false, "frame": 51022, "arm": null, "trunk": 23.7, "relh": 1.23, "img_s": "img/skeleton/det_林頡廷_040.png", "img_f": "img/footage/det_林頡廷_040.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 23.7, "relh": 1.78, "frame": 51022, "img_s": "img/skeleton/lab_林頡廷_040.png", "img_f": "img/footage/lab_林頡廷_040.jpg"}}, {"pitcher": "林頡廷", "np": 41, "velo": 119, "count": "2-0", "t": 1719.2, "detected": true, "result": "ball", "bases": "3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 51523, "arm": 38.4, "trunk": 31.2, "relh": 1.31, "img_s": "img/skeleton/det_林頡廷_041.png", "img_f": "img/footage/det_林頡廷_041.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 40.1, "trunk": 31.2, "relh": 1.76, "frame": 51523, "img_s": "img/skeleton/lab_林頡廷_041.png", "img_f": "img/footage/lab_林頡廷_041.jpg"}}, {"pitcher": "林頡廷", "np": 42, "velo": 125, "count": "3-0", "t": 1735.6, "detected": true, "result": "ball", "bases": "3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 52015, "arm": 31.2, "trunk": 31.3, "relh": 1.17, "img_s": "img/skeleton/det_林頡廷_042.png", "img_f": "img/footage/det_林頡廷_042.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 37.5, "trunk": 31.3, "relh": 1.9, "frame": 52015, "img_s": "img/skeleton/lab_林頡廷_042.png", "img_f": "img/footage/lab_林頡廷_042.jpg"}}, {"pitcher": "林頡廷", "np": 43, "velo": 123, "count": "3-1", "t": 1754.4, "detected": true, "result": "strike", "bases": "3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 52579, "arm": 38.0, "trunk": 32.4, "relh": 1.38, "img_s": "img/skeleton/det_林頡廷_043.png", "img_f": "img/footage/det_林頡廷_043.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 32.4, "relh": 1.87, "frame": 52579, "img_s": "img/skeleton/lab_林頡廷_043.png", "img_f": "img/footage/lab_林頡廷_043.jpg"}}, {"pitcher": "林頡廷", "np": 44, "velo": 126, "count": "0-0", "t": 1770.4, "detected": true, "result": NaN, "bases": "3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": false, "frame": 53058, "arm": null, "trunk": 31.9, "relh": 1.3, "img_s": "img/skeleton/det_林頡廷_044.png", "img_f": "img/footage/det_林頡廷_044.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 37.2, "trunk": 31.9, "relh": 1.71, "frame": 53058, "img_s": "img/skeleton/lab_林頡廷_044.png", "img_f": "img/footage/lab_林頡廷_044.jpg"}}, {"pitcher": "林頡廷", "np": 45, "velo": null, "count": "0-0", "t": 1870.4, "detected": false, "result": NaN, "bases": "1B,2B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "林頡廷", "np": 46, "velo": 115, "count": "0-1", "t": 1900.7, "detected": true, "result": "strike", "bases": "1B,2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 56964, "arm": 41.9, "trunk": 30.8, "relh": 1.36, "img_s": "img/skeleton/det_林頡廷_046.png", "img_f": "img/footage/det_林頡廷_046.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 41.9, "trunk": 30.8, "relh": 1.81, "frame": 56964, "img_s": "img/skeleton/lab_林頡廷_046.png", "img_f": "img/footage/lab_林頡廷_046.jpg"}}, {"pitcher": "林頡廷", "np": 47, "velo": 112, "count": "1-1", "t": 1915.5, "detected": true, "result": "ball", "bases": "1B,2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 57408, "arm": 34.2, "trunk": 29.3, "relh": 1.27, "img_s": "img/skeleton/det_林頡廷_047.png", "img_f": "img/footage/det_林頡廷_047.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 36.7, "trunk": 29.3, "relh": 1.77, "frame": 57408, "img_s": "img/skeleton/lab_林頡廷_047.png", "img_f": "img/footage/lab_林頡廷_047.jpg"}}, {"pitcher": "林頡廷", "np": 48, "velo": 131, "count": "1-2", "t": 1946.7, "detected": true, "result": "strike", "bases": "1B,2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 58344, "arm": 34.9, "trunk": 30.6, "relh": 1.18, "img_s": "img/skeleton/det_林頡廷_048.png", "img_f": "img/footage/det_林頡廷_048.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 38.4, "trunk": 30.6, "relh": 1.92, "frame": 58344, "img_s": "img/skeleton/lab_林頡廷_048.png", "img_f": "img/footage/lab_林頡廷_048.jpg"}}, {"pitcher": "林頡廷", "np": 49, "velo": 131, "count": "2-2", "t": 1968.5, "detected": true, "result": "ball", "bases": "1B,2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 58996, "arm": 42.0, "trunk": 32.7, "relh": 1.35, "img_s": "img/skeleton/det_林頡廷_049.png", "img_f": "img/footage/det_林頡廷_049.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 45.8, "trunk": 32.7, "relh": 1.9, "frame": 58996, "img_s": "img/skeleton/lab_林頡廷_049.png", "img_f": "img/footage/lab_林頡廷_049.jpg"}}, {"pitcher": "林頡廷", "np": 50, "velo": 130, "count": "3-2", "t": 1986.7, "detected": true, "result": "ball", "bases": "1B,2B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 59541, "arm": 39.2, "trunk": 28.9, "relh": 1.2, "img_s": "img/skeleton/det_林頡廷_050.png", "img_f": "img/footage/det_林頡廷_050.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 39.2, "trunk": 28.9, "relh": 1.89, "frame": 59541, "img_s": "img/skeleton/lab_林頡廷_050.png", "img_f": "img/footage/lab_林頡廷_050.jpg"}}, {"pitcher": "林頡廷", "np": 51, "velo": null, "count": "0-0", "t": 2022.0, "detected": false, "result": NaN, "bases": "1B,2B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "劉澔橙", "np": 1, "velo": 130, "count": "1-0", "t": 2118.5, "detected": true, "result": NaN, "bases": "1B,2B,3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 63491, "arm": 35.4, "trunk": 25.6, "relh": 1.4, "img_s": "img/skeleton/det_劉澔橙_001.png", "img_f": "img/footage/det_劉澔橙_001.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 29.5, "trunk": 25.6, "relh": 1.73, "frame": 63491, "img_s": "img/skeleton/lab_劉澔橙_001.png", "img_f": "img/footage/lab_劉澔橙_001.jpg"}}, {"pitcher": "劉澔橙", "np": 2, "velo": 130, "count": "2-0", "t": 2136.0, "detected": true, "result": "ball", "bases": "1B,2B,3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": false, "frame": 64017, "arm": null, "trunk": 25.7, "relh": 1.45, "img_s": "img/skeleton/det_劉澔橙_002.png", "img_f": "img/footage/det_劉澔橙_002.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": false, "arm": null, "trunk": 25.7, "relh": 1.85, "frame": 64017, "img_s": "img/skeleton/lab_劉澔橙_002.png", "img_f": "img/footage/lab_劉澔橙_002.jpg"}}, {"pitcher": "劉澔橙", "np": 3, "velo": 131, "count": "2-1", "t": 2166.2, "detected": false, "result": "strike", "bases": "1B,2B,3B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "劉澔橙", "np": 4, "velo": 122, "count": "2-2", "t": 2177.9, "detected": true, "result": "strike", "bases": "1B,2B,3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 65271, "arm": 36.2, "trunk": 31.0, "relh": 1.4, "img_s": "img/skeleton/det_劉澔橙_004.png", "img_f": "img/footage/det_劉澔橙_004.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 30.9, "trunk": 31.0, "relh": 1.68, "frame": 65271, "img_s": "img/skeleton/lab_劉澔橙_004.png", "img_f": "img/footage/lab_劉澔橙_004.jpg"}}, {"pitcher": "劉澔橙", "np": 5, "velo": 131, "count": "0-0", "t": 2229.7, "detected": false, "result": NaN, "bases": "", "delivery": "windup", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "劉澔橙", "np": 6, "velo": 103, "count": "0-1", "t": 2262.2, "detected": true, "result": "strike", "bases": "2B,3B", "delivery": "stretch", "det": {"ok": true, "arm_ok": true, "frame": 67797, "arm": 37.4, "trunk": 33.7, "relh": 1.97, "img_s": "img/skeleton/det_劉澔橙_006.png", "img_f": "img/footage/det_劉澔橙_006.jpg"}, "label_status": "release", "err": 0, "lab": {"ok": true, "arm_ok": true, "arm": 37.4, "trunk": 30.7, "relh": 1.98, "frame": 67797, "img_s": "img/skeleton/lab_劉澔橙_006.png", "img_f": "img/footage/lab_劉澔橙_006.jpg"}}, {"pitcher": "劉澔橙", "np": 7, "velo": 103, "count": "1-1", "t": 2282.4, "detected": false, "result": "ball", "bases": "2B,3B", "delivery": "stretch", "det": {"ok": false}, "label_status": "release", "err": null, "lab": {"ok": true, "arm_ok": true, "arm": 35.6, "trunk": 24.2, "relh": 1.79, "frame": 68404, "img_s": "img/skeleton/lab_劉澔橙_007.png", "img_f": "img/footage/lab_劉澔橙_007.jpg"}}, {"pitcher": "劉澔橙", "np": 8, "velo": null, "count": "0-0", "t": 2312.8, "detected": false, "result": NaN, "bases": "2B,3B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}, {"pitcher": "吳丞顥", "np": 37, "velo": null, "count": "0-0", "t": 2426.9, "detected": false, "result": NaN, "bases": "2B", "delivery": "stretch", "det": {"ok": false}, "label_status": "not_visible", "err": null, "lab": {"ok": false}}], "shots": [{"img": "img/footage/shot_00.jpg", "sim": 0.22, "cf": false}, {"img": "img/footage/shot_01.jpg", "sim": 0.36, "cf": false}, {"img": "img/footage/shot_02.jpg", "sim": 0.6, "cf": false}, {"img": "img/footage/shot_03.jpg", "sim": 0.96, "cf": true}, {"img": "img/footage/shot_04.jpg", "sim": 0.45, "cf": false}, {"img": "img/footage/shot_05.jpg", "sim": 0.34, "cf": false}, {"img": "img/footage/shot_06.jpg", "sim": 0.95, "cf": true}, {"img": "img/footage/shot_07.jpg", "sim": 0.43, "cf": false}, {"img": "img/footage/shot_08.jpg", "sim": 0.97, "cf": true}, {"img": "img/footage/shot_09.jpg", "sim": 0.95, "cf": true}, {"img": "img/footage/shot_10.jpg", "sim": 0.29, "cf": false}, {"img": "img/footage/shot_11.jpg", "sim": 0.96, "cf": true}], "bug": {"img": "img/footage/scorebug.jpg", "read": {"pitcher": "林頡廷", "np": 1, "velo_kmh": 120, "balls": 1, "strikes": 0, "bases": ""}}, "footage": true, "games": [{"title": "PSA · Pitcher Status Analyzer", "href": "../", "current": false}, {"title": "Reports", "href": "../#reports", "current": false}, {"title": "Method", "href": "../method/", "current": false}, {"title": "Demo", "href": "../final_1930_6000/", "current": false}], "strip": [{"img_s": "img/skeleton/strip_0.png", "img_f": "img/footage/strip_0.jpg", "release": false, "dt_ms": -200}, {"img_s": "img/skeleton/strip_1.png", "img_f": "img/footage/strip_1.jpg", "release": false, "dt_ms": -167}, {"img_s": "img/skeleton/strip_2.png", "img_f": "img/footage/strip_2.jpg", "release": false, "dt_ms": -133}, {"img_s": "img/skeleton/strip_3.png", "img_f": "img/footage/strip_3.jpg", "release": false, "dt_ms": -100}, {"img_s": "img/skeleton/strip_4.png", "img_f": "img/footage/strip_4.jpg", "release": false, "dt_ms": -67}, {"img_s": "img/skeleton/strip_5.png", "img_f": "img/footage/strip_5.jpg", "release": false, "dt_ms": -33}, {"img_s": "img/skeleton/strip_6.png", "img_f": "img/footage/strip_6.jpg", "release": true, "dt_ms": 0}, {"img_s": "img/skeleton/strip_7.png", "img_f": "img/footage/strip_7.jpg", "release": false, "dt_ms": 33}, {"img_s": "img/skeleton/strip_8.png", "img_f": "img/footage/strip_8.jpg", "release": false, "dt_ms": 67}], "eval": {"labeled_releases": 59, "labeled_not_visible_or_replay": 22, "predicted": 57, "predicted_on_no_release": 0, "recall_within_1f": 0.966, "precision_within_1f": 1.0, "recall_within_2f": 0.966, "precision_within_2f": 1.0, "recall_within_5f": 0.966, "precision_within_5f": 1.0, "usable": 56, "usable_precision_within_1f": 1.0, "usable_precision_within_2f": 1.0, "usable_precision_within_5f": 1.0, "median_abs_err_frames": 0.0, "mean_signed_err_frames": 0.02}, "labels_file": "data/label/final_1930_6000/release_labels.json", "within_psi": {"吳丞顥": {"psi": 96, "results": 97, "mechanics": 96, "parts": {"velocity": 100, "command": 94, "posture": 94, "timing": 97}, "detail": {"velocity": {"dev_kmh": -0.1, "fb_min_kmh": 137, "n": [8, 7]}, "command": {"dev_pct": -20.0, "n": [10, 10]}, "mechanics": {"delivery": "windup", "n": [8, 8]}}, "np": {"first": [16, 26], "second": [27, 37]}, "frames": "labeled"}, "林頡廷": {"psi": 96, "results": 100, "mechanics": 92, "parts": {"velocity": 100, "command": 99, "posture": 90, "timing": 86, "consistency": 99}, "detail": {"velocity": {"dev_kmh": 0.9, "fb_min_kmh": 125, "n": [9, 8]}, "command": {"dev_pct": -4.5, "n": [22, 22]}, "mechanics": {"delivery": "stretch", "n": [9, 9]}}, "np": {"first": [1, 25], "second": [26, 51]}, "frames": "labeled"}}};
+(() => {
+  const $ = (s, el = document) => el.querySelector(s);
+  const h = (tag, attrs = {}, ...kids) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") el.className = v; else if (k === "style") el.style.cssText = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(kid));
+    return el;
+  };
+  const fmt = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toFixed(d);
+  const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : NaN;
+  const sd = a => { if (a.length < 2) return NaN; const m = mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); };
+  const median = a => { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const hms = t => { t = Math.round(t); const hh = Math.floor(t / 3600), mm = Math.floor(t % 3600 / 60), ss = t % 60; return `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`; };
+  const yt = t => `${DATA.source.url}&t=${Math.max(0, Math.round(t) - 3)}s`;
+
+  const P = DATA.pitches;
+  const EV = DATA.eval;
+  // Label mode: "lab" uses the hand-labeled release frame, "det" the detector's. Unlabeled pitches fall back to det.
+  let SRC = EV ? "lab" : "det";
+  let VIEW = DATA.footage ? "footage" : "drawing";
+  const pick = o => (VIEW === "footage" && o?.img_f) ? o.img_f : o?.img_s;
+  function applySource(src) {
+    SRC = src;
+    for (const p of P) {
+      const m = (src === "lab" && p.label_status) ? (p.lab ?? { ok: false }) : p.det;
+      p.mech_ok = !!m.ok; p.arm_ok = !!m.arm_ok; p.trunk_tilt = m.trunk; p.arm_slot = m.arm; p.rel_h = m.relh;
+      p.img = pick(m);
+    }
+  }
+  applySource(SRC);
+  const pitchers = [...new Set(P.map(p => p.pitcher))];
+  const byPitcher = Object.fromEntries(pitchers.map(n => [n, P.filter(p => p.pitcher === n)]));
+  const order = [...pitchers].sort((a, b) => byPitcher[b].length - byPitcher[a].length);
+  const colorOf = n => `var(--s${(order.indexOf(n) % 3) + 1})`;
+
+  $("#srcCredit").textContent = DATA.footage
+    ? `Video: ${DATA.source.title}, © ${DATA.source.channel}. Frames are quoted from the public broadcast for research and commentary; pose drawings and measurements are this project's own. Each pitch links to the original broadcast on YouTube.`
+    : `Video: ${DATA.source.title}, © ${DATA.source.channel}. This page shows no broadcast footage: drawings are pose estimates made from it, and each pitch links to the original broadcast on YouTube.`;
+  if (DATA.footage) {
+    const vs = $("#viewswitch"); vs.hidden = false;
+    const paintView = () => { for (const b of vs.querySelectorAll("button")) b.setAttribute("aria-checked", String(b.dataset.view === VIEW)); };
+    for (const b of vs.querySelectorAll("button")) b.addEventListener("click", () => {
+      VIEW = b.dataset.view; paintView(); applySource(SRC); renderStrip(); renderLog();
+    });
+    paintView();
+  }
+
+  if ((DATA.games ?? []).length > 1) {
+    const nav = $("#games"); nav.hidden = false;
+    for (const g of DATA.games) nav.append(h("a", { href: g.href || "./", ...(g.current ? { "aria-current": "page" } : {}) }, g.title));
+  }
+
+  // Header ------------------------------------------------------------------
+  const src = DATA.source;
+  $("#source").append(
+    h("span", {}, src.title), h("span", {}, src.channel),
+    h("a", { href: `${src.url}&t=${src.start}s`, target: "_blank", rel: "noopener" }, `YouTube ${hms(src.start)}–${hms(src.end)}`),
+    h("span", {}, `${src.fps} fps`)
+  );
+  $("#frameGap").textContent = `Frames are ${fmt(1000 / src.fps)} ms apart at this broadcast's ${src.fps} fps.`;
+  const matched = P.filter(p => p.detected).length;
+  const velos = P.filter(p => p.velo != null).length;
+  const readout = [
+    [P.length, "pitches counted from the scorebug"],
+    [`${matched}<em>/${P.length}</em>`, `deliveries found by pose (${fmt(100 * matched / P.length)}%)`],
+    [`${velos}<em>/${P.length}</em>`, "velocities read from the overlay"],
+    [pitchers.length, "pitchers in this segment"],
+  ];
+  for (const [v, k] of readout) { const d = h("div", {}, h("span", { class: "v" }), h("span", { class: "k" }, k)); d.firstChild.innerHTML = v; $("#bugrow").append(d); }
+
+  // Step 1-4 -----------------------------------------------------------------
+  for (const s of DATA.shots) {
+    const tile = h("div", { class: "shot" + (s.cf ? " cf" : "") + (s.img ? "" : " noimg") });
+    tile.append(s.img ? h("img", { src: s.img, alt: s.cf ? "Pitching shot" : "Other shot", loading: "lazy" }) : h("i", { style: `height:${Math.max(6, s.sim * 100)}%` }));
+    tile.append(h("span", {}, (s.cf ? "CF " : "") + s.sim.toFixed(2)));
+    $("#shots").append(tile);
+  }
+  const r = DATA.bug.read;
+  $("#bug").append(DATA.bug.img ? h("img", { src: DATA.bug.img, alt: "Broadcast scorebug" }) : h("p", { class: "note-box" }, "Scorebug image not included. These are the fields read from one frame:"), h("dl", { class: "kv" },
+    h("dt", {}, "pitcher"), h("dd", {}, r.pitcher ?? "–"),
+    h("dt", {}, "NP"), h("dd", {}, fmt(r.np)),
+    h("dt", {}, "velocity"), h("dd", {}, r.velo_kmh ? `${r.velo_kmh} km/h` : "–"),
+    h("dt", {}, "count"), h("dd", {}, r.balls != null ? `${r.balls}-${r.strikes}` : "–")));
+  function renderStrip() {
+    $("#strip").replaceChildren();
+    for (const f of DATA.strip) $("#strip").append(h("figure", { class: f.release ? "rel" : "" }, h("img", { src: pick(f), alt: f.release ? "Release frame" : "Delivery frame", loading: "lazy" }), h("figcaption", {}, f.release ? "release" : `${f.dt_ms > 0 ? "+" : ""}${f.dt_ms} ms`)));
+  }
+  renderStrip();
+  for (const f of ["pitcher", "NP", "km/h", "runners", "windup / stretch", "count after", "ball / strike", "trunk tilt", "arm slot", "release height", "video time"]) $("#fields").append(h("span", { class: "chip" }, f));
+
+  // Charts ---------------------------------------------------------------------
+  const tip = h("div", { class: "tip", hidden: "" });
+  function chart(host, { title, note, badge, pts, unit, digits = 0, baseline, wide = false }) {
+    const box = h("div", { class: wide ? "chart wide" : "chart" });
+    const head = h("header", {}, h("h3", {}, title), h("span", { class: "note" }, note));
+    if (badge) head.append(h("span", { class: `badge ${badge[0]}` }, badge[1]));
+    box.append(head);
+    host.append(box);
+    if (pts.length < 2) { box.append(h("p", { class: "note" }, "Not enough measured pitches.")); return; }
+    const W = 900, H = 240, m = { l: 40, r: 12, t: 10, b: 26 };  // about the drawn width, so axis text stays 11px
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    let y0 = Math.min(...ys), y1 = Math.max(...ys);
+    if (baseline) { y0 = Math.min(y0, baseline.lo); y1 = Math.max(y1, baseline.hi); }
+    const pad = Math.max((y1 - y0) * 0.12, 1); y0 -= pad; y1 += pad;
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const X = x => m.l + (x - x0) / Math.max(1, x1 - x0) * (W - m.l - m.r);
+    const Y = y => m.t + (1 - (y - y0) / (y1 - y0)) * (H - m.t - m.b);
+    const ns = "http://www.w3.org/2000/svg";
+    const s = (tag, a) => { const el = document.createElementNS(ns, tag); for (const k in a) el.setAttribute(k, a[k]); return el; };
+    const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${title} by pitch number` });
+    const step = niceStep((y1 - y0) / 4);
+    const g = s("g", { class: "grid" });
+    for (let v = Math.ceil(y0 / step) * step; v <= y1; v += step) {
+      g.append(s("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v) }));
+      const t = s("text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }); t.textContent = fmt(v, step < 1 ? 1 : 0); g.append(t);
+    }
+    const xstep = niceStep((x1 - x0) / 6) || 1;
+    for (let v = Math.ceil(x0 / xstep) * xstep; v <= x1; v += xstep) { const t = s("text", { x: X(v), y: H - 8, "text-anchor": "middle" }); t.textContent = v; g.append(t); }
+    const xl = s("text", { x: W - m.r, y: H - 8, "text-anchor": "end" }); xl.textContent = "NP →"; g.append(xl);
+    svg.append(g);
+    if (baseline) {
+      svg.append(s("rect", { x: m.l, width: W - m.l - m.r, y: Y(baseline.hi), height: Math.max(1, Y(baseline.lo) - Y(baseline.hi)), fill: "var(--accent-soft)" }));
+      svg.append(s("line", { x1: m.l, x2: W - m.l - m.r + m.l, y1: Y(baseline.mid), y2: Y(baseline.mid), stroke: "var(--accent)", "stroke-width": 1, "stroke-dasharray": "4 4" }));
+    }
+    const color = pts[0].color;
+    svg.append(s("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(""), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round", opacity: 0.55 }));
+    // Filled = windup, hollow = stretch (runners on).
+    const dots = pts.map(p => {
+      const c = p.stretch
+        ? s("circle", { cx: X(p.x), cy: Y(p.y), r: 4, fill: "var(--panel)", stroke: color, "stroke-width": 2 })
+        : s("circle", { cx: X(p.x), cy: Y(p.y), r: 4, fill: color, stroke: "var(--panel)", "stroke-width": 2 });
+      svg.append(c); return c;
+    });
+    const hit = s("rect", { x: m.l, y: 0, width: W - m.l - m.r, height: H, fill: "transparent" });
+    svg.append(hit);
+    const move = e => {
+      const rect = svg.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width * W;
+      let k = 0; for (let i = 1; i < pts.length; i++) if (Math.abs(X(pts[i].x) - px) < Math.abs(X(pts[k].x) - px)) k = i;
+      dots.forEach((d, i) => d.setAttribute("r", i === k ? 6 : 4));
+      const p = pts[k];
+      tip.innerHTML = `NP ${p.x} · <b>${fmt(p.y, digits)} ${unit}</b>${p.extra ? "<br>" + p.extra : ""}`;
+      tip.hidden = false; box.append(tip);
+      const bx = box.getBoundingClientRect();
+      const left = rect.left - bx.left + X(p.x) / W * rect.width;
+      tip.style.left = Math.min(Math.max(8, left - 60), bx.width - 170) + "px";
+      tip.style.top = (rect.top - bx.top + Y(p.y) / H * rect.height - 58) + "px";
+    };
+    hit.addEventListener("pointermove", move);
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; dots.forEach(d => d.setAttribute("r", 4)); });
+    box.append(svg);
+  }
+  function niceStep(raw) {
+    if (!(raw > 0)) return 1;
+    const p = 10 ** Math.floor(Math.log10(raw)), f = raw / p;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  }
+
+  const runnersLabel = b => !b ? "empty" : b === "1B,2B,3B" ? "loaded" : b.replaceAll(",", "+");
+  const extraOf = p => [p.delivery === "stretch" ? `stretch · ${runnersLabel(p.bases)}` : "windup · bases empty", p.count ? `count ${p.count}` : ""].filter(Boolean).join("<br>");
+
+  function stats(name) {
+    const ps = byPitcher[name];
+    const v = ps.filter(p => p.velo != null);
+    // Compare like with like: velocity drift is measured on windup pitches only.
+    const vw = v.filter(p => p.delivery !== "stretch");
+    const first = vw.slice(0, 10).map(p => p.velo), last = vw.slice(-10).map(p => p.velo);
+    const nStretch = ps.filter(p => p.delivery === "stretch").length;
+    const veloBy = d => mean(v.filter(p => (p.delivery === "stretch") === (d === "stretch")).map(p => p.velo));
+    const bs = ps.filter(p => p.result);
+    const strikes = bs.filter(p => p.result !== "ball").length;
+    const mech = ps.filter(p => p.mech_ok), armP = ps.filter(p => p.arm_ok && p.arm_slot != null);
+    return {
+      ps, v, first, last, drop: vw.length >= 12 ? mean(last) - mean(first) : NaN, nStretch,
+      veloW: veloBy("windup"), veloS: veloBy("stretch"),
+      strikePct: bs.length ? 100 * strikes / bs.length : NaN, bsN: bs.length,
+      trunkSD: sd(mech.map(p => p.trunk_tilt)), armSD: sd(armP.map(p => p.arm_slot)), mechN: mech.length, armN: armP.length,
+    };
+  }
+
+  let current = null;
+  function renderBoard(name) {
+    current = name;
+    for (const t of $("#tabs").children) t.setAttribute("aria-selected", String(t.dataset.name === name));
+    const st = stats(name), color = colorOf(name);
+    const tiles = $("#tiles"); tiles.replaceChildren();
+    // Within-game PSI: his second half against his first half, same parts and curve as the season PSI.
+    const W = (DATA.within_psi || {})[name], wbox = $("#wpsi");
+    wbox.hidden = !W; wbox.replaceChildren();
+    if (W) {
+      const band = v => v >= 80 ? ["steady", "steady"] : v >= 60 ? ["look", "worth a look"] : ["flag", "flagged"];
+      const [cls, txt] = band(W.psi), D = W.detail || {};
+      const names = { velocity: "velocity", command: "command", posture: "posture", timing: "timing", consistency: "consistency" };
+      const bits = [`NP ${W.np.first[0]}–${W.np.first[1]} vs ${W.np.second[0]}–${W.np.second[1]}`];
+      if (D.velocity) bits.push(`fastballs = ${D.velocity.fb_min_kmh}+ km/h (no pitch types on the scorebug)`);
+      if (D.mechanics) bits.push(`mechanics on his ${D.mechanics.delivery} pitches only, ${W.frames} frames`);
+      wbox.append(
+        h("div", {}, h("span", { class: "k" }, "Within-game PSI · second half vs first half"),
+          h("div", { class: "big" }, h("b", {}, String(W.psi)), h("span", { class: `pill ${cls}` }, txt))),
+        h("div", { class: "parts" }, ...Object.keys(names).filter(k => W.parts[k] != null).map(k => h("span", {}, `${names[k]} `, h("b", {}, String(W.parts[k])))),
+          h("span", {}, `results `, h("b", {}, String(W.results ?? "–")), ` · mechanics `, h("b", {}, String(W.mechanics ?? "–")))),
+        h("p", { class: "note" }, `${bits.join(" · ")}. The season PSI compares whole outings instead (step 5); one game has no earlier outing, so here his first half is the baseline.`));
+    }
+    const dropTxt = Number.isNaN(st.drop) ? "–" : `${st.drop > 0 ? "+" : ""}${fmt(st.drop, 1)}`;
+    tiles.append(
+      h("div", { class: "tile" }, h("span", { class: "k" }, "Pitches in segment"), h("span", { class: "v" }, String(st.ps.length)), h("span", { class: "s" }, `NP ${st.ps[0].np}–${st.ps.at(-1).np} · ${st.ps.length - st.nStretch} windup / ${st.nStretch} stretch`)),
+      h("div", { class: "tile" }, h("span", { class: "k" }, "Windup velocity, last 10 vs first 10"), h("span", { class: "v" }, `${dropTxt} km/h`), h("span", { class: "s" }, Number.isNaN(st.drop) ? "needs 12+ windup pitches" : `${fmt(mean(st.first), 1)} → ${fmt(mean(st.last), 1)} · stretch avg ${fmt(st.veloS, 1)}`)),
+      h("div", { class: "tile" }, h("span", { class: "k" }, "Strike rate (known pitches)"), h("span", { class: "v" }, `${fmt(st.strikePct)}%`), h("span", { class: "s" }, `${st.bsN} pitches with a readable count change`)),
+      h("div", { class: "tile" }, h("span", { class: "k" }, "Release frames measured"), h("span", { class: "v" }, `${st.mechN}/${st.ps.length}`), h("span", { class: "s" }, SRC === "lab" ? "from your labeled frames" : "detector frames marked usable")),
+    );
+    const charts = $("#charts"); charts.replaceChildren();
+    const base = st.first.length >= 5 ? { mid: mean(st.first), lo: mean(st.first) - sd(st.first), hi: mean(st.first) + sd(st.first) } : null;
+    chart(charts, { title: "Velocity", note: "km/h, scorebug", badge: ["good", "READY"], unit: "km/h", baseline: base, wide: true,
+      pts: st.v.map(p => ({ x: p.np, y: p.velo, color, stretch: p.delivery === "stretch", extra: extraOf(p) })) });
+    const srcTxt = SRC === "lab" ? "labeled frames" : "detected frames";
+    chart(charts, { title: "Trunk tilt at release", note: `${srcTxt} · SD ${fmt(st.trunkSD, 1)}° over ${st.mechN}`, badge: ["warn", "EXPERIMENTAL"], unit: "°", digits: 1,
+      pts: st.ps.filter(p => p.mech_ok).map(p => ({ x: p.np, y: p.trunk_tilt, color, stretch: p.delivery === "stretch", extra: extraOf(p) })) });
+    chart(charts, { title: "Arm slot at release", note: `${srcTxt} · SD ${fmt(st.armSD, 1)}° over ${st.armN}`, badge: ["bad", "REFERENCE ONLY"], unit: "°", digits: 1,
+      pts: st.ps.filter(p => p.arm_ok && p.arm_slot != null).map(p => ({ x: p.np, y: p.arm_slot, color, stretch: p.delivery === "stretch", extra: extraOf(p) })) });
+  }
+  for (const n of order) {
+    const b = h("button", { class: "tab", role: "tab", "data-name": n, style: `--sw:${colorOf(n)}`, onclick: () => renderBoard(n) }, h("span", { class: "dot" }), n, h("small", {}, `${byPitcher[n].length} P`));
+    $("#tabs").append(b);
+  }
+  renderBoard(order[0]);
+
+  // Pitch log ------------------------------------------------------------------
+  const resultLabel = { ball: "ball", strike: "strike", foul: "foul" };
+  function showDetail(p) {
+    const d = $("#detail"); d.replaceChildren();
+    d.append(h("div", { class: "img" }, p.img ? h("img", { src: p.img, alt: `Release frame, ${p.pitcher} NP ${p.np}` }) : p.detected ? "Release frame not confirmed.\nThe arm blurred out, or the frame caught the set position or follow-through." : "No delivery matched for this pitch.\nThe pitching shot may have been cut or the pose lost."));
+    const body = h("div", { class: "body" },
+      h("div", { class: "eyebrow" }, `${p.pitcher} · NP ${p.np}`),
+      h("div", { class: "v num" }, p.velo ? `${p.velo} km/h` : "velocity not read"),
+      h("dl", { class: "kv" },
+        h("dt", {}, "runners"), h("dd", {}, runnersLabel(p.bases)),
+        h("dt", {}, "delivery"), h("dd", {}, p.delivery ?? "–"),
+        h("dt", {}, "count after"), h("dd", {}, p.count ?? "–"),
+        h("dt", {}, "result"), h("dd", {}, resultLabel[p.result] ?? "–"),
+        h("dt", {}, "trunk tilt"), h("dd", {}, p.mech_ok ? `${fmt(p.trunk_tilt, 1)}°` : "–"),
+        h("dt", {}, "arm slot"), h("dd", {}, p.mech_ok ? (p.arm_ok ? `${fmt(p.arm_slot, 1)}°` : "uncertain (hand blurred)") : "–"),
+        h("dt", {}, "release height"), h("dd", {}, p.mech_ok ? `${fmt(p.rel_h, 2)} torso` : "–"),
+        h("dt", {}, "frame source"), h("dd", {}, SRC === "lab" && p.label_status === "release" ? "your label (verified)" : "detector"),
+        h("dt", {}, "pose quality"), h("dd", {}, p.mech_ok ? "usable" : (SRC === "lab" && p.label_status === "release") ? "arm not visible at release" : p.detected ? "not confirmed, skipped" : "not detected"),
+        h("dt", {}, "your label"), h("dd", {}, statusLabel[p.label_status] ?? "none"),
+        h("dt", {}, "detector vs label"), h("dd", {}, p.err == null ? (p.label_status === "release" ? "missed" : "–") : `${p.err > 0 ? "+" : ""}${p.err} frames (${fmt(p.err * 1000 / DATA.source.fps)} ms)`)),
+      h("a", { href: yt(p.t), target: "_blank", rel: "noopener" }, `Watch at ${hms(p.t)} ↗`));
+    d.append(body);
+  }
+  const statusLabel = { release: "✓ release", not_visible: "not visible", replay: "replay" };
+  const tbody = $("#table tbody");
+  function renderLog() {
+  tbody.replaceChildren();
+  P.forEach((p, i) => {
+    const tr = h("tr", { tabindex: "0", "aria-selected": "false" },
+      h("td", {}, h("span", { class: "sw", style: `background:${colorOf(p.pitcher)}` }), p.pitcher),
+      h("td", {}, String(p.np)),
+      h("td", { class: p.bases ? "" : "dim" }, runnersLabel(p.bases)),
+      h("td", { class: p.delivery === "stretch" ? "" : "dim" }, p.delivery ?? "–"),
+      h("td", {}, p.count ?? "–"),
+      h("td", { class: p.result ? "" : "dim" }, resultLabel[p.result] ?? "–"),
+      h("td", {}, fmt(p.velo)),
+      h("td", { class: p.label_status ? "" : "dim" }, statusLabel[p.label_status] ?? "–"),
+      h("td", { class: p.err == null ? "dim" : Math.abs(p.err) > 2 ? "off" : "" }, p.err == null ? "–" : `${p.err > 0 ? "+" : ""}${p.err}`),
+      h("td", { class: p.mech_ok ? "" : "dim" }, p.mech_ok ? fmt(p.trunk_tilt, 1) : (p.detected ? "blur" : "–")),
+      h("td", { class: p.mech_ok && p.arm_ok ? "" : "dim" }, p.mech_ok ? (p.arm_ok ? fmt(p.arm_slot, 1) : "?") : (p.detected ? "blur" : "–")),
+      h("td", {}, h("a", { href: yt(p.t), target: "_blank", rel: "noopener", onclick: e => e.stopPropagation() }, hms(p.t))));
+    const select = () => { for (const r of tbody.children) r.setAttribute("aria-selected", "false"); tr.setAttribute("aria-selected", "true"); showDetail(p); };
+    tr.addEventListener("click", select);
+    tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } });
+    tbody.append(tr);
+  });
+  const firstGood = P.findIndex(p => p.mech_ok);
+  tbody.children[Math.max(0, firstGood)].click();
+  }
+  renderLog();
+
+  // Verdicts ------------------------------------------------------------------
+  function renderVerdicts() {
+  $("#verdicts").replaceChildren();
+  const main = stats(order[0]);
+  const rows = [
+    ["Pitch count", "Pitches per game and per week are the strongest workload risk factors in youth studies.", `${P.length} pitches counted, NP read from the scorebug.`, ["good", "READY"]],
+    ["Velocity drift", "The most consistent within-game fatigue sign: about 1–5 mph drop.", `${velos}/${P.length} velocities read from the scorebug.`, ["good", "READY"]],
+    ["Windup vs stretch", "Runners on change the delivery; mixing both would fake drift.", `${P.filter(p => p.delivery === "stretch").length}/${P.length} pitches from the stretch, read from the scorebug base diamond.`, ["good", "READY (broadcast)"]],
+    ["Strike rate", "Falls sharply late in youth outings.", `${fmt(main.strikePct)}% over ${main.bsN} pitches with a readable count change.`, ["good", "READY"]],
+    EV
+      ? ["Release frame", "Mechanics are only as good as the frame they are measured on.", `Detector within ±2 frames of your label on ${Math.round(EV.recall_within_2f * EV.labeled_releases)}/${EV.labeled_releases} releases; frames it marks usable are within ±2 on ${fmt(100 * EV.usable_precision_within_2f)}%.`, [EV.recall_within_2f >= 0.8 ? "good" : "warn", EV.recall_within_2f >= 0.8 ? "READY" : "NEEDS WORK"]]
+      : ["Delivery detection", "Needed to attach video measures to each pitch.", `${matched}/${P.length} scorebug pitches matched to a detected release (${fmt(100 * matched / P.length)}%).`, [matched / P.length >= 0.9 ? "good" : "warn", matched / P.length >= 0.9 ? "READY" : "NEEDS WORK"]],
+    ["Side lean (trunk tilt)", "Relates to velocity and elbow load (+3.7 N·m per +10°); fatigue research mostly shows forward lean changing 3–5°, not side lean. Video pose error is 4–6°.", `SD ${fmt(main.trunkSD, 1)}° across ${main.mechN} usable pitches for ${order[0]}.`, [main.trunkSD <= 4 ? "warn" : "bad", main.trunkSD <= 4 ? "EXPERIMENTAL" : "TOO NOISY"]],
+    ["Arm slot", "Changes only about 1.7° with fatigue; video pose error at release is 7–15°.", `SD ${fmt(main.armSD, 1)}°. At 30 fps the arm often blurs out at release.`, ["bad", "REFERENCE ONLY"]],
+  ];
+  for (const [a, b, c, [cls, lab]] of rows) $("#verdicts").append(h("tr", {}, h("td", {}, a), h("td", {}, b), h("td", {}, c), h("td", {}, h("span", { class: `badge ${cls}` }, lab))));
+  }
+  renderVerdicts();
+
+  // Label mode: source switch + scorecard ----------------------------------------
+  if (EV) {
+    const sw = $("#srcswitch"); sw.hidden = false; $("#srcnote").hidden = false;
+    const paintSwitch = () => {
+      for (const b of sw.children) b.setAttribute("aria-checked", String(b.dataset.src === SRC));
+      $("#srcnote").textContent = SRC === "lab"
+        ? "Mechanics are measured on the release frames you labeled. This is the best case: what the metrics look like when the frame is right."
+        : "Mechanics are measured on the frames the detector picked and marked usable. This is what the product would show without labels.";
+    };
+    for (const b of sw.children) b.addEventListener("click", () => { applySource(b.dataset.src); paintSwitch(); renderBoard(current); renderLog(); renderVerdicts(); });
+    paintSwitch();
+    const sc = $("#scorecard"); sc.hidden = false;
+    $("#scoreLede").textContent = `${EV.labeled_releases} releases labeled by hand (${EV.labeled_not_visible_or_replay} marked not visible or replay). One frame is ${fmt(1000 / DATA.source.fps)} ms at ${fmt(DATA.source.fps, 2)} fps.`;
+    const tile = (k, v, s) => h("div", { class: "tile" }, h("span", { class: "k" }, k), h("span", { class: "v" }, v), h("span", { class: "s" }, s));
+    $("#scoreTiles").append(
+      tile("Releases found", `${EV.predicted - EV.predicted_on_no_release}/${EV.labeled_releases}`, `${EV.predicted_on_no_release} detections on pitches you marked not visible`),
+      tile("Within ±2 frames", `${fmt(100 * EV.recall_within_2f)}%`, `±1: ${fmt(100 * EV.recall_within_1f)}% · ±5: ${fmt(100 * EV.recall_within_5f)}%`),
+      tile("Usable frames that are right", `${fmt(100 * EV.usable_precision_within_2f)}%`, `${EV.usable} frames marked usable, checked at ±2`),
+      tile("Median error", `${fmt(EV.median_abs_err_frames)} fr`, `mean signed ${EV.mean_signed_err_frames > 0 ? "+" : ""}${fmt(EV.mean_signed_err_frames, 1)} (+ = late)`),
+    );
+  }
+})();
+</script>
+</body>
+</html>

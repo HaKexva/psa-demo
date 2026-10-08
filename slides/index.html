@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>PSA · Pitcher Status Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  html, body { margin: 0; background: #0b1220; }
+  body { padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .frame { width: min(100%, 1280px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 8px;
+           box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+  .slide { width: 1920px; height: 1080px; transform-origin: top left; position: absolute; left: 0; top: 0; }
+  .slide > section { width: 1920px; height: 1080px; box-sizing: border-box; position: relative; }
+  section h1, section h2, section h3, section p, section ul, section ol { margin: 0; }
+  section aside { display: none; }
+  section table { border-collapse: collapse; }
+  section th, section td { text-align: left; padding: 16px 20px; border-bottom: 1px solid #24304a; vertical-align: top; }
+</style>
+</head>
+<body>
+<div class="frame"><div class="slide"><section id="cover" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<p style="font-size:28px;color:#f2b84b">PSA · Pitcher Status Analyzer</p>
+<div style="display:flex;flex-direction:column;gap:40px">
+<h1 style="font-size:96px;font-weight:600;line-height:1.08;color:#e4e9f0">Pitcher analysis<br>from public game video</h1>
+<p style="font-size:28px;line-height:1.4;color:#98a4b5;width:1200px">How each pitcher's delivery and results change from one outing to the next. No tracking hardware, no paid data.</p>
+</div>
+<div style="display:flex;gap:48px;align-items:center">
+<p style="font-size:24px;color:#98a4b5">2026 野革盃 · Rebas hackathon</p>
+<p style="font-size:24px;color:#6f9ee8">hakexva.github.io/psa-demo</p>
+</div>
+<aside>PSA turns free broadcast video plus open play-by-play data into a per-outing score of how each pitcher compares with his own recent outings. Built for schools and teams with no budget for tracking hardware.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="problem" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">The problem</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0;width:1500px">Tracking a pitcher's condition needs hardware most teams don't have</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">Pro clubs</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Statcast, Hawk-Eye and TrackMan measure every pitch: speed, spin, release point.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">Schools and amateur teams</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Pitch counts by hand. No budget for tracking systems or paid data.</p>
+</div>
+<div style="background:#16213a;border:1px solid #f2b84b;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:28px;font-weight:600;color:#f2b84b">But one fixed angle is easy to record</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Tournaments such as 黑豹旗 are streamed free from a fixed centre-field camera. Later, a phone behind the mound at live ABs gives the same view in practice.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 02</p>
+<aside>Pros track every pitch with stadium systems. Most schools count pitches by hand. Games such as 黑豹旗 are already streamed from one fixed angle; later, a practice mode puts a phone behind the mound at live ABs, so a coach can check a pitcher between games.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="idea" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">The idea</p>
+<h2 style="font-size:96px;font-weight:700;line-height:1.08;color:#e4e9f0">One broadcast video in.<br>One row per pitch out.</h2>
+</div>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5;width:1400px">Pitch count and speed from the scorebug, the pitcher's body at release from the centre-field camera, and each pitch's result from open play-by-play.</p>
+<div style="display:flex;gap:40px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:12px"><img src="images/bp_broadcast_frame.jpg" alt="The 2025 黑豹旗 final from the centre-field camera at the moment of release, with the scorebug in the corner" style="width:528px;height:297px;object-fit:cover;border-radius:12px"><p style="font-size:24px;color:#98a4b5">Broadcast frame</p></div>
+<div style="display:flex;flex-direction:column;gap:12px"><img src="images/bp_scorebug.jpg" alt="The scorebug: teams, score, inning, count, pitcher, pitch count and speed" style="width:594px;height:297px;object-fit:cover;border-radius:12px"><p style="font-size:24px;color:#98a4b5">Scorebug: count, pitch count, speed</p></div>
+<div style="display:flex;flex-direction:column;gap:12px"><img src="images/bp_release_pose.jpg" alt="The pitcher's body pose drawn at the release frame, with arm slot and trunk angles" style="width:297px;height:297px;object-fit:cover;border-radius:12px"><p style="font-size:24px;color:#98a4b5">Pose at the release frame</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 03</p>
+<aside>The core idea: a broadcast already carries what a coach needs per pitch. We read it instead of buying sensors.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="pipeline" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">How it works</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">Five steps, about five minutes per video on a Mac</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:24px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">01</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">Find the pitching shot</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Centre-field frames kept; replays and close-ups skipped.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">02</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">Read the scorebug</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Count, pitch count and speed, by macOS text recognition.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">03</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">Track the pose</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Apple Vision body pose; a learned picker finds the release frame.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">04</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">Join each pitch</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Matched to open play-by-play where it exists; otherwise the scorebug's count changes give the result.</p>
+</div>
+<div style="background:#16213a;border:1px solid #f2b84b;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;color:#f2b84b">05</p>
+<h3 style="font-size:28px;font-weight:600;line-height:1.2;color:#e4e9f0">Score the outing</h3>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">PSI: this outing against his own previous three.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 04</p>
+<aside>Each step runs locally on a Mac with built-in Apple frameworks. The demo page walks the 2025 黑豹旗 final through all five steps.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="psi" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">The score</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">PSI: is he pitching like himself?</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;color:#e4e9f0;background:#0a101f;border:1px solid #24304a;border-radius:10px;padding:20px">d = |change| ÷ threshold</p>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Threshold: the smallest change the measurement can detect at 95%. d = 1 is a change just big enough to be real.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;color:#e4e9f0;background:#0a101f;border:1px solid #24304a;border-radius:10px;padding:20px">score = 100 · e^(−d²/4)</p>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">100 with no change, 78 at the threshold, 37 at twice it. Equal to 100 × Harrington's two-sided desirability (1965), n = 2, limits at ±2 thresholds.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;color:#e4e9f0;background:#0a101f;border:1px solid #24304a;border-radius:10px;padding:20px">PSI = ½ results + ½ mechanics</p>
+<p style="font-size:24px;line-height:1.45;color:#98a4b5">Results: velocity, command. Mechanics: posture, timing, release consistency.</p>
+</div>
+</div>
+<div style="display:flex;gap:40px;align-items:center">
+<p style="font-size:24px;color:#9dbcf0;background:#16264a;border:1px solid #2e4878;border-radius:999px;padding:8px 24px">80+ steady</p>
+<p style="font-size:24px;color:#c3ccd8;background:#1a2438;border:1px solid #33405a;border-radius:999px;padding:8px 24px">60–79 worth a look</p>
+<p style="font-size:24px;color:#f2b84b;background:#2a2414;border:1px solid #6b5420;border-radius:999px;padding:8px 24px">below 60 flagged</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 05</p>
+<aside>Dividing by the detection threshold puts km/h, degrees and milliseconds on one scale. The bell curve is flat near zero, so noise costs almost nothing, and it has no cliff at the threshold. Each part score equals 100 times Harrington's two-sided desirability function from quality engineering (1965), exp(−|y′|ⁿ), with n = 2 and the specification limits at plus and minus two detection thresholds, where it scores 1/e, our 37.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="example" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">An outing, scored</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">李鎮宸, 2025 黑豹旗 semi-final: his second day in a row</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">PSI · against his earlier games</h3><p style="font-size:28px;color:#c3ccd8">74</p></div>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Velocity −1.0 km/h → 88</p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Command 19 points fewer strikes → 82</p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Release spread ×1.46 → 64</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">In-game · second half vs first</h3><p style="font-size:28px;color:#c3ccd8">74</p></div>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Timing: hip and shoulder timing moved → <span style="color:#f2b84b">32</span></p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Velocity −2.3 km/h → 80</p>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Command → 96 · posture → 87</p>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:40px;background:#16213a;border:1px solid #f2b84b;border-radius:16px;padding:28px 36px">
+<p style="font-size:28px;line-height:1.45;color:#e4e9f0">23 pitches the day before, 46 that day: within the rest rules, yet both scores say worth a look. A coach sees it the same evening, from the stream.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 06</p>
+<aside>A real outing from the 黑豹旗 tournament report. The tournament score compares him with his earlier games; the in-game score compares his second half with his first. Both moved on his second day in a row, while the pitch count stayed within the rules.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="twoscores" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">Two scores, never mixed</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">Within one game, and between games</h2>
+</div>
+<table style="font-size:28px;color:#c3ccd8;width:1664px">
+<tr><th style="width:22%;color:#7a8699">&#160;</th><th style="width:39%;color:#e4e9f0">In-game score</th><th style="width:39%;color:#e4e9f0">PSI, between games</th></tr>
+<tr><td style="color:#98a4b5">Compares</td><td>his second half with his first half</td><td>this outing with his previous three</td></tr>
+<tr><td style="color:#98a4b5">Threshold</td><td>pitch sampling only</td><td>sampling plus normal game-to-game variation</td></tr>
+<tr><td style="color:#98a4b5">Null test</td><td>random halves of one game</td><td>game order shuffled in a season</td></tr>
+<tr><td style="color:#98a4b5">League check</td><td>0% of random halves flagged; a second-half velocity drop in 21% of starts</td><td>without game-to-game variation, 56% of outings crossed a "95%" threshold</td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:900px;font-size:24px;color:#7a8699">PSA · 07 · Rebas Open Data 2023–2025, every CPBL outing</p>
+<aside>Inside one game there is no day-to-day variation, so a sampling-only threshold is right, and the in-game score is calibrated and sensitive. Between games the threshold must include normal variation; our league test showed that, and it is the next fix.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="camera" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">Every stadium is different</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">The field is the ruler</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;line-height:1.5;color:#98a4b5">Each park's centre-field camera sits at a different angle, so 5° of lean in one park is not 5° in another.</p>
+<p style="font-size:28px;line-height:1.5;color:#98a4b5">13 landmarks on one frame (batter's boxes, plate, rubber), at their official distances, give the camera's direction and zoom.</p>
+<p style="font-size:28px;line-height:1.5;color:#e4e9f0">Cuts of the same broadcast agree within 0.1–0.5°.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px">
+<svg aria-label="Field landmarks seen from centre field: the rubber far away at the top, the plate and both batter's boxes near the bottom, with the 13 labeled points marked" width="720" height="480" viewBox="0 40 720 480">
+<rect x="0" y="40" width="720" height="480" fill="#16213a"/>
+<ellipse cx="360" cy="110" rx="120" ry="34" fill="#3a2f22"/>
+<rect x="330" y="104" width="60" height="8" fill="#e4e9f0"/>
+<circle cx="330" cy="108" r="9" fill="#f2b84b"/>
+<circle cx="390" cy="108" r="9" fill="#f2b84b"/>
+<polygon points="150,330 300,330 290,470 120,470" fill="none" stroke="#e4e9f0" stroke-width="4"/>
+<polygon points="420,330 570,330 600,470 430,470" fill="none" stroke="#e4e9f0" stroke-width="4"/>
+<polygon points="330,380 390,380 395,400 360,420 325,400" fill="#e4e9f0"/>
+<circle cx="150" cy="330" r="9" fill="#f2b84b"/><circle cx="300" cy="330" r="9" fill="#f2b84b"/>
+<circle cx="120" cy="470" r="9" fill="#f2b84b"/><circle cx="290" cy="470" r="9" fill="#f2b84b"/>
+<circle cx="420" cy="330" r="9" fill="#f2b84b"/><circle cx="570" cy="330" r="9" fill="#f2b84b"/>
+<circle cx="430" cy="470" r="9" fill="#f2b84b"/><circle cx="600" cy="470" r="9" fill="#f2b84b"/>
+<circle cx="330" cy="380" r="9" fill="#6f9ee8"/><circle cx="390" cy="380" r="9" fill="#6f9ee8"/><circle cx="360" cy="420" r="9" fill="#6f9ee8"/>
+<line x1="360" y1="140" x2="360" y2="360" stroke="#2a3754" stroke-width="3" stroke-dasharray="10 10"/>
+</svg>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 08</p>
+<aside>The rules fix the field's dimensions, so a few labeled points on one frame are enough to solve the camera. With the camera known, body angles are measured as if from straight behind the pitcher, in any stadium.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="camera_real" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px"><div style="display:flex;flex-direction:column;gap:20px"><p style="font-size:24px;color:#f2b84b">On a real frame</p><h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">13 clicks give the camera</h2></div><div style="display:grid;grid-template-columns:900px 1fr;gap:64px;align-items:start"><img src="images/landmarks_real.jpg" alt="A CPBL broadcast frame from centre field: the pitcher on the mound, batter, catcher and umpire behind; amber dots on the corners of both batter's boxes, the plate and the rubber, and blue outlines of the boxes, plate and rubber drawn through the solved camera" style="width:900px;height:600px;object-fit:cover;border-radius:16px"><div style="display:flex;flex-direction:column;gap:28px"><p style="font-size:28px;line-height:1.5;color:#98a4b5"><span style="color:#f2b84b">Amber:</span> the 13 points clicked by hand on one frame.</p><p style="font-size:28px;line-height:1.5;color:#98a4b5"><span style="color:#6f9ee8">Blue:</span> the boxes, plate and rubber at their official sizes, drawn back through the solved camera.</p><p style="font-size:28px;line-height:1.5;color:#e4e9f0">They land 4.5 px from the clicks on average. All 40 labeled videos solve.</p><p style="font-size:24px;color:#7a8699">CPBL broadcast, 2025-06-24</p></div></div><p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 09</p><aside>The same idea on a real broadcast frame: a minute of clicking per video fixes the camera, and the official field drawn back through it lands on the clicks.</aside></section>
+</div></div>
+<div class="frame"><div class="slide"><section id="reports" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">Live reports</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">High school and pro, already running</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:24px;color:#7a8699">Tournament · high school</p>
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">2025 黑豹旗</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Pitch counts checked against the rest rules, PSI and an in-game score per game.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:24px;color:#7a8699">Season · CPBL</p>
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">胡智為 · 2025–2026</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">Every outing scored against his previous three, with PSI over game score.</p>
+</div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:24px;color:#7a8699">Demo</p>
+<h3 style="font-size:28px;font-weight:600;color:#e4e9f0">One game, step by step</h3>
+<p style="font-size:28px;line-height:1.45;color:#98a4b5">2025 黑豹旗 final, 羅東高工 vs 平鎮高中: every pitch through the five steps.</p>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">Free</p><p style="font-size:24px;color:#98a4b5">no hardware, no paid data</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">33</p><p style="font-size:24px;color:#98a4b5">outings scored</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">3,164</p><p style="font-size:24px;color:#98a4b5">pitches tracked</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:56px;font-weight:600;color:#e4e9f0">~5 min</p><p style="font-size:24px;color:#98a4b5">per highlight video</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:900px;font-size:24px;color:#7a8699">PSA · 10 · hakexva.github.io/psa-demo</p>
+<aside>All three reports are live on the demo site. The numbers come from the landing page.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="holds" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">What holds</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">The measurements are consistent</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #f2b84b;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">114 / 114</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">automatic release picks within ±1 frame of hand labels, on a 黑豹旗 camera the picker had never seen</p></div>
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #f2b84b;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">1.4°</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">median side-lean difference, same pitch in two CPBL broadcast cuts</p></div>
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #6f9ee8;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">0.1–0.5°</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">camera direction agreement between cuts of one CPBL feed</p></div>
+<div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid #6f9ee8;padding:24px 0 0 0"><p style="font-size:56px;font-weight:600;color:#e4e9f0">0.2%</p><p style="font-size:28px;line-height:1.4;color:#98a4b5">of random halves flagged in 43 黑豹旗 outings: noise is not read as change</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 11</p>
+<aside>These checks passed. On high-school video the release picker matched every hand label it answered, and the in-game score does not treat noise inside a game as change. The two angle checks come from CPBL broadcasts.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="open" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">What we can't claim yet</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">PSI notices change; it does not yet predict</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:0px">
+<div style="display:grid;grid-template-columns:420px 1fr;gap:40px;border-top:1px solid #24304a;padding:28px 0"><p style="font-size:28px;font-weight:600;color:#e4e9f0">Thresholds too tight</p><p style="font-size:28px;line-height:1.45;color:#98a4b5">2025 黑豹旗, 10 full games: a pitcher's fastball moves 1.8 km/h between games (SD), not 0.9 as sampling alone predicts; 42% of changes cross a "95%" threshold (CPBL 2023–2025: 56%).</p></div>
+<div style="display:grid;grid-template-columns:420px 1fr;gap:40px;border-top:1px solid #24304a;padding:28px 0"><p style="font-size:28px;font-weight:600;color:#e4e9f0">No outcome to test yet</p><p style="font-size:28px;line-height:1.45;color:#98a4b5">High-school games have no open play-by-play, so only coaches can say whether a flag mattered. In CPBL, a low results score did not predict the next start (ρ = −0.02).</p></div>
+<div style="display:grid;grid-template-columns:420px 1fr;gap:40px;border-top:1px solid #24304a;border-bottom:1px solid #24304a;padding:28px 0"><p style="font-size:28px;font-weight:600;color:#e4e9f0">One tournament, 8 pitchers</p><p style="font-size:28px;line-height:1.45;color:#98a4b5">蔡辰瀧 (平鎮) lost 5.6 km/h over four games, 146 → 140 km/h, with 9 days' rest before the semi-final: a lead for his coach, not a finding.</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 12</p>
+<aside>On high-school games, as on CPBL, the thresholds leave out normal game-to-game variation: that is the first fix. School games have no open play-by-play, so the outcome test has to come from coaches.</aside>
+</section>
+</div></div>
+<div class="frame"><div class="slide"><section id="next" data-transition="fade" style="background:#0b1220;color:#e4e9f0;font-family:Inter, Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;color:#f2b84b">Next</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.15;color:#e4e9f0">From a consistent measurement to a useful signal</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">1 · Wider thresholds</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">Add the game-to-game variation measured on 黑豹旗 and CPBL to every part's threshold, then rerun both tests.</p></div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">2 · Practice mode</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">A phone behind the mound at live ABs, so a coach and a pitcher can check his status between games.</p></div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">3 · More tournaments</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">Full games of 玉山盃 2025 (the same 羅東, 平鎮 and 美和 pitchers) and 2026 黑豹旗 (10/25–11/29).</p></div>
+<div style="background:#16213a;border:1px solid #24304a;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:12px"><h3 style="font-size:28px;font-weight:600;color:#e4e9f0">4 · Coach review</h3><p style="font-size:24px;line-height:1.45;color:#98a4b5">Coaches check the outings PSI flags, starting with 黑豹旗 teams, and tell us which flags matter.</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:600px;font-size:24px;color:#7a8699">PSA · 13</p>
+<aside>Next, every threshold gets the measured game-to-game variation; then more full high-school games, a practice mode for live ABs, and coaches' review of the flags.</aside>
+</section>
+</div></div>
+<script>
+  const fit = () => document.querySelectorAll(".frame").forEach(f => f.firstElementChild.style.transform = `scale(${f.clientWidth / 1920})`);
+  addEventListener("resize", fit); fit();
+</script>
+</body>
+</html>
