@@ -6,8 +6,9 @@
               blue: "#6f9ee8", amber: "#f2b84b", bad: "#e5484d", soft: "rgba(242,184,75,0.12)" };
   const mono = "JetBrains Mono, ui-monospace, monospace", sans = "Inter, 'Noto Sans TC', sans-serif";
   const tick = { color: C.muted, fontFamily: mono, fontSize: 11 };
+  // AG Charts defaults to a 300 × 300 px minimum: in a smaller box its wrapper spills out and swallows clicks below.
   const base = (el, spec) => ({
-    container: el, background: { visible: false }, padding: { top: 12, right: 12, bottom: 4, left: 4 },
+    container: el, minWidth: 0, minHeight: 0, background: { visible: false }, padding: { top: 12, right: 12, bottom: 4, left: 4 },
     legend: { enabled: false }, animation: { enabled: false }, theme: "ag-default-dark", data: spec.data,
   });
   const yAxis = (min, max, values, extra = {}) => ({
