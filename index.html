@@ -170,19 +170,24 @@
       </table>
     </div>
     <div class="mt-12">
-      <h3 class="m-0 text-base font-medium text-[#e4e9f0]">Two scores, never mixed</h3>
-      <p class="mb-0 mt-2 max-w-2xl text-sm leading-6">Inside one game there is no day-to-day variation, so the in-game score can use a tight threshold. Between games the threshold must also allow for normal game-to-game variation.</p>
+      <h3 class="m-0 text-base font-medium text-[#e4e9f0]">Two scores: in-game and between games</h3>
+      <p class="mb-0 mt-2 max-w-2xl text-sm leading-6">The same three steps answer two different questions. Only the baseline and the threshold change, and the two scores are never mixed. Inside one game it is the same day and the same body, so there is no game-to-game variation to allow for and the in-game threshold is tight. Between games the threshold must also allow for it, as in the examples above.</p>
       <div class="mt-5 overflow-x-auto rounded-2xl bg-[#0f1828] ring-1 ring-inset ring-white/10">
       <table class="w-full min-w-[36rem] border-collapse text-left text-sm">
         <thead class="font-['JetBrains_Mono',monospace] text-xs text-[#7a8699]"><tr><th class="px-5 py-3 font-normal"></th><th class="px-5 py-3 font-normal">In-game score</th><th class="px-5 py-3 font-normal">PSI, between games</th></tr></thead>
         <tbody>
-<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Compares</td><td class="px-5 py-3">his second half with his first half</td><td class="px-5 py-3">this outing with his first of the tournament</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Asks</td><td class="px-5 py-3">Is he fading during this game?</td><td class="px-5 py-3">Is he his usual self today?</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Compares</td><td class="px-5 py-3">his second half with his first half, by pitch count</td><td class="px-5 py-3">this outing with his first of the tournament</td></tr>
 <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Threshold</td><td class="px-5 py-3">pitch sampling only</td><td class="px-5 py-3">sampling plus normal game-to-game variation</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Needs</td><td class="px-5 py-3">one game</td><td class="px-5 py-3">an earlier outing in the tournament</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Shown on</td><td class="px-5 py-3">the game walkthrough (Demo) and the live demo</td><td class="px-5 py-3">the pitcher pages</td></tr>
+<tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">蔡辰瀧, semifinal fastball</td><td class="px-5 py-3">pitches 1–39 vs 40–79: 140.4 → 140.1 km/h, a 0.3 drop; threshold 1.96 · 0.66 = 1.30, d = 0.21, score <span class="text-[#e4e9f0]">99</span></td><td class="px-5 py-3">6.0 km/h below his first outing; threshold 4.61, d = 1.30, score <span class="text-[#e4e9f0]">65</span></td></tr>
 <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">Null test</td><td class="px-5 py-3">random halves of one game</td><td class="px-5 py-3">game order shuffled within a season</td></tr>
 <tr class="border-0 border-t border-solid border-white/5"><td class="px-5 py-3 text-[#e4e9f0]">League check</td><td class="px-5 py-3">0% of random halves flagged; a second-half velocity drop in 21% of starts</td><td class="px-5 py-3">with game-to-game variation (1.5 km/h) in the threshold, 2% of shuffled outings cross, down from 23–31%</td></tr>
         </tbody>
       </table>
       </div>
+      <p class="mb-0 mt-3 max-w-2xl text-sm leading-6">Read together: he came into the semifinal 6 km/h slower than in his first game, then held that speed for all 79 pitches. The between-game score sees the drop; the in-game score says it did not happen during the game.</p>
       <p class="mb-0 mt-3 text-xs text-[#7a8699]">League check: every CPBL outing 2023–2025 in Rebas Open Data, 1,563 starts and 2,798 relief outings.</p>
     </div>
   </section>
